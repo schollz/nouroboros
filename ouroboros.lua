@@ -98,6 +98,9 @@ function init()
     end)
   end
 
+  params:default()
+  params:bang()
+
 
   clock.run(function()
     while true do
