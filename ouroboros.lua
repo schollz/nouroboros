@@ -8,9 +8,30 @@
 --    ▼ instructions below ▼
 --
 
-tree_=include("lib/tree")
+musicutil=require("musicutil")
 engine.name="Ouroboros"
 
+--
+-- SONG SPECIFIC
+--
+bpm=120
+chords={
+  {chord="I",beats=1},
+  {chord="V",beats=1},
+  {chord="vi",beats=2},
+}
+--
+-- THANKS
+--
+
+--
+-- globals
+--
+beats_total=0
+rec_queue={}
+
+-- script
+--
 reverb_settings_saved={}
 reverb_settings={
   reverb=2,
@@ -20,6 +41,8 @@ reverb_settings={
   rev_mid_time=6,
 }
 function init()
+  params:set("clock_tempo",bpm)
+
   print("starting")
   os.execute(_path.code.."ouroboros/lib/oscnotify/run.sh &")
 
@@ -75,17 +98,62 @@ function init()
     end)
   end
 
+
   clock.run(function()
     while true do
       clock.sleep(1/10)
       redraw()
     end
   end)
-  engine.sound_delta(PATH_TO_SAMPLES,2)
+
+  -- start the looper
+  for _,c in ipairs(chords) do
+    beats_total=beats_total+c.beats
+  end
+  clock_beat=0
+  clock_chord=1
+  clock.run(function()
+    while true do
+      clock.sync(1/4)
+      clock_beat=clock_beat+1
+      print("[clock] beat",clock_beat)
+      if (clock_beat==chords[clock_chord]) then
+        clock_beat=0
+        clock_chord=clock_chord+1
+        if clock_chord>#chords then
+          print("[clock] new phrase")
+          clock_chord=1
+          engine.sync()
+        end
+        print("[clock] new chord",chords[clock_chord].chord)
+      end
+    end
+  end
+end
+
+function rec_queue_up(x)
+  -- don't queue up twice
+  for _,v in ipairs(rec_queue) do
+    if v==x then
+      do return end
+    end
+  end
+  table.insert(rec_queue,x)
+  print("[rec] queued",x)
+end
+
+function rec_queue_down()
+  local x=table.remove(rec_queue,1)
+  engine.record(x,beats_total*clock.get_beat_sec())
+  print("[rec] recording",x)
 end
 
 function key(k,z)
+  if k>1 and z==1 then
+    rec_queue_up(k)
+  end
 end
+
 
 function enc(k,d)
 end
