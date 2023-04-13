@@ -21,17 +21,17 @@ Engine_Ouroboros : CroneEngine {
 		arg id;
         if (bufs.at(id).notNil,{
             if (loops.at(id).notNil,{
-                ("[ouro] sending done to loop",id).postln;
+                ["[ouro] sending done to loop",id].postln;
                 loops.at(id).set(\done,1);
             });
-            ("[ouro] started playing loop",id).postln;
+            ["[ouro] started playing loop",id].postln;
             loops.put(id,Synth.before(syns.at("fx"),"looper",[
                 buf: bufs.at(id),
                 busReverb: buses.at("busReverb")
                 busNoCompress: buses.at("busNoCompress")
                 busCompress: buses.at("busCompress")
             ]).onFree({
-                ("[ouro] stopped playing loop",id).postln;
+                ["[ouro] stopped playing loop",id].postln;
             }));
             NodeWatcher.register(loops.at(id));
         });
@@ -72,9 +72,10 @@ Engine_Ouroboros : CroneEngine {
 		}).add;
 
 		SynthDef("recorder",{
-			arg id, buf, db = 0;
+			arg id,buf,t_trig,busReverb,busCompress,busNoCompress,db=0,done=0;
             var amp = db.dbamp;
             var snd = SoundIn.ar([0,1]);
+                        var reverbSend = 0.25;
             RecordBuf.ar(snd,buf,doneAction:2);
 			snd = snd * amp;
 			Out.ar(busCompress,0*snd);
@@ -120,7 +121,7 @@ Engine_Ouroboros : CroneEngine {
 		"done loading.".postln;
 
         this.addCommand("sync","",{ arg msg;
-            loops.keysValuesDo({ arg k, sync;
+            loops.keysValuesDo({ arg k, syn;
                 if (syn.isRunning,{
                     syn.set(\t_trig,1);
                 });
@@ -141,7 +142,7 @@ Engine_Ouroboros : CroneEngine {
                     });
                 });
                 if (playing,{
-                    loops.at(id).set(\buf,buf);
+                    loops.at(id).set(\buf,bufs.at(id));
                 },{
                     this.play(id);
                 });
@@ -154,7 +155,7 @@ Engine_Ouroboros : CroneEngine {
                     id: id,
                     buf: buf,
                 ]).onFree({
-                    ("[ouro] finished recording loop",id).postln;
+                    ["[ouro] finished recording loop",id].postln;
                 }));
             });
 		});
@@ -165,7 +166,7 @@ Engine_Ouroboros : CroneEngine {
             var v=msg[3];
             if (syns.at(id).notNil,{
                 if (syns.at(id).isRunning,{
-                    ("[ouro] setting loop",id,k,"=",v).postln;
+                    ["[ouro] setting loop",id,k,"=",v].postln;
                     syns.at(id).set(k,v);
                 });
             });
@@ -187,7 +188,7 @@ Engine_Ouroboros : CroneEngine {
 			val.free;
 		});
 		buses.keysValuesDo({ arg k, val;
-			buses.free;
+			val.free;
 		});
 	}
 }
