@@ -1,0 +1,193 @@
+// Engine_Ouroboros
+
+// Inherit methods from CroneEngine
+Engine_Ouroboros : CroneEngine {
+
+    // Ouroboros specific v0.1.0
+	var server;
+	var bufs;
+	var buses;
+	var syns;
+	var oscs;
+    var loops;
+    // Ouroboros ^
+
+    *new { arg context, doneCallback;
+        ^super.new(context, doneCallback);
+    }
+
+
+	play {
+		arg id;
+        if (bufs.at(id).notNil,{
+            if (loops.at(id).notNil,{
+                ("[ouro] sending done to loop",id).postln;
+                loops.at(id).set(\done,1);
+            });
+            ("[ouro] started playing loop",id).postln;
+            loops.put(id,Synth.before(syns.at("fx"),"looper",[
+                buf: bufs.at(id),
+                busReverb: buses.at("busReverb")
+                busNoCompress: buses.at("busNoCompress")
+                busCompress: buses.at("busCompress")
+            ]).onFree({
+                ("[ouro] stopped playing loop",id).postln;
+            }));
+            NodeWatcher.register(loops.at(id));
+        });
+	}
+
+    alloc {
+        // Ouroboros specific v0.0.1
+        var server = context.server;
+        var xfade = 0.1;
+
+		// basic players
+		SynthDef("fx",{
+			arg busReverb,busCompress,busNoCompress;
+			var snd;
+			var sndReverb=In.ar(busReverb,2);
+			var sndCompress=In.ar(busCompress,2);
+			var sndNoCompress=In.ar(busNoCompress,2);
+			sndCompress=Compander.ar(sndCompress,sndCompress,0.05,slopeAbove:0.1,relaxTime:0.01);
+			sndNoCompress=Compander.ar(sndNoCompress,sndNoCompress,1,slopeAbove:0.1,relaxTime:0.01);
+			sndReverb=Fverb.ar(sndReverb[0],sndReverb[1]);
+
+			snd=sndCompress+sndNoCompress+sndReverb;
+			Out.ar(0,snd*Line.ar(0,1,3));
+		}).add;
+
+		SynthDef("looper",{
+			arg id,buf,t_trig,busReverb,busCompress,busNoCompress,db=0,done=0;
+            var amp = db.dbamp;
+            var playhead = Toggle.kr(t_trig);
+			var snd0 = PlayBuf.ar(2,buf,rate:BufRateScale.ir(buf),loop:1,trigger:1-playhead);
+			var snd1 = PlayBuf.ar(2,buf,rate:BufRateScale.ir(buf),loop:1,trigger:playhead);
+			var snd = SelectX.ar(Lag.kr(playhead),[snd0,snd1]);
+            var reverbSend = 0.25;
+			snd = snd * amp * EnvGen.ar(Env.adsr(3,1,1,3),done,doneAction:2);
+			Out.ar(busCompress,0*snd);
+			Out.ar(busNoCompress,(1-reverbSend)*snd);
+			Out.ar(busReverb,reverbSend*snd);
+		}).add;
+
+		SynthDef("recorder",{
+			arg id, buf, db = 0;
+            var amp = db.dbamp;
+            var snd = SoundIn.ar([0,1]);
+            RecordBuf.ar(snd,buf,doneAction:2);
+			snd = snd * amp;
+			Out.ar(busCompress,0*snd);
+			Out.ar(busNoCompress,(1-reverbSend)*snd);
+			Out.ar(busReverb,reverbSend*snd);
+		}).add;
+
+
+		// initialize variables
+		syns = Dictionary.new();
+		buses = Dictionary.new();
+		bufs = Dictionary.new();
+		oscs = Dictionary.new();
+		loops = Dictionary.new();
+
+		server.sync;
+		oscs.put("position",OSCFunc({ |msg|
+			var oscRoute=msg[0];
+			var synNum=msg[1];
+			var dunno=msg[2];
+			var bufNum=msg[3].asInteger;
+			var lr=msg[4];
+			var fb=msg[5];
+			var amp=msg[6];
+			NetAddr("127.0.0.1", 10111).sendMsg("lr",bufNum,lr);
+			NetAddr("127.0.0.1", 10111).sendMsg("fb",bufNum,fb);
+			NetAddr("127.0.0.1", 10111).sendMsg("amp",bufNum,amp);
+		}, '/position'));
+		
+		// define buses
+		buses.put("busCompress",Bus.audio(server,2));
+		buses.put("busNoCompress",Bus.audio(server,2));
+		buses.put("busReverb",Bus.audio(server,2));
+		server.sync;
+
+		// define fx
+		syns.put("fx",Synth.tail(server,"fx",[
+            busReverb: buses.at("busReverb"),
+            busNoCompress: buses.at("busNoCompress"),
+            busCompress: buses.at("busCompress"),
+        ]));
+		server.sync;
+		"done loading.".postln;
+
+        this.addCommand("sync","",{ arg msg;
+            loops.keysValuesDo({ arg k, sync;
+                if (syn.isRunning,{
+                    syn.set(\t_trig,1);
+                });
+            });
+        });
+
+		this.addCommand("record","ifff",{ arg msg;
+            var id=msg[1];
+            var seconds=msg[2]+xfade;
+
+            // initiate a routine to automatically start playing loop
+            Routine {
+                var playing = false;
+                seconds.wait;
+                if (loops.at(id).notNil,{
+                    if (loops.at(id).isRunning,{
+                        playing = true;
+                    });
+                });
+                if (playing,{
+                    loops.at(id).set(\buf,buf);
+                },{
+                    this.play(id);
+                });
+            }.play;
+
+            // allocate buffer and record the loop
+            Buffer.alloc(server,seconds*server.sampleRate,action:{ arg buf;
+                bufs.put(id,buf);
+                syns.put("record"++id,Synth.head(server,"recorder",[
+                    id: id,
+                    buf: buf,
+                ]).onFree({
+                    ("[ouro] finished recording loop",id).postln;
+                }));
+            });
+		});
+
+		this.addCommand("set_loop","isf",{ arg msg;
+            var id=msg[1];
+            var k=msg[2];
+            var v=msg[3];
+            if (syns.at(id).notNil,{
+                if (syns.at(id).isRunning,{
+                    ("[ouro] setting loop",id,k,"=",v).postln;
+                    syns.at(id).set(k,v);
+                });
+            });
+		});
+    }
+
+
+	free {
+		bufs.keysValuesDo({ arg k, val;
+			val.free;
+		});
+		oscs.keysValuesDo({ arg k, val;
+			val.free;
+		});
+		syns.keysValuesDo({ arg k, val;
+			val.free;
+		});
+		loops.keysValuesDo({ arg k, val;
+			val.free;
+		});
+		buses.keysValuesDo({ arg k, val;
+			buses.free;
+		});
+	}
+}
