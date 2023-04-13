@@ -117,21 +117,22 @@ function init()
   clock_chord=1
   clock.run(function()
     while true do
-      clock.sync(1/4)
+      clock.sync(1)
       clock_beat=clock_beat+1
-      print("[clock] beat",clock_beat)
-      if (clock_beat==chords[clock_chord]) then
-        clock_beat=0
+      -- print("[clock] beat",clock_beat)
+      if (clock_beat>chords[clock_chord].beats) then
+        clock_beat=1
         clock_chord=clock_chord+1
         if clock_chord>#chords then
-          print("[clock] new phrase")
+          -- print("[clock] new phrase")
           clock_chord=1
           engine.sync()
+          rec_queue_down()
         end
-        print("[clock] new chord",chords[clock_chord].chord)
+        -- print("[clock] new chord",chords[clock_chord].chord)
       end
     end
-  end
+  end)
 end
 
 function rec_queue_up(x)
@@ -146,6 +147,9 @@ function rec_queue_up(x)
 end
 
 function rec_queue_down()
+  if next(rec_queue)==nil then 
+    do return end 
+  end
   local x=table.remove(rec_queue,1)
   engine.record(x,beats_total*clock.get_beat_sec())
   print("[rec] recording",x)
@@ -161,6 +165,11 @@ end
 function enc(k,d)
 end
 
+function rerun()
+  norns.script.load(norns.state.script)
+end
+
+
 function cleanup()
   os.execute("pkill -f oscnotify")
   for k,v in pairs(reverb_settings_saved) do
@@ -175,6 +184,10 @@ function redraw()
   screen.level(15)
   screen.move(64,32)
   screen.text("ouroboros")
+  screen.move(72,18)
+  screen.text(clock_beat)
+  screen.move(36,18)
+  screen.text(clock_chord.."/"..#chords)
 
   screen.update()
 end
