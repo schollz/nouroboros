@@ -1,6 +1,6 @@
 # Compiled Lua sources
 luac.out
-
+oscnotify
 # luarocks build files
 *.src.rock
 *.zip

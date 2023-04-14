@@ -40,7 +40,7 @@ Engine_Ouroboros : CroneEngine {
     alloc {
         // Ouroboros specific v0.0.1
         var server = context.server;
-        var xfade = 0.1;
+        var xfade = 1;
 
 		// basic players
 		SynthDef("fx",{
@@ -66,7 +66,7 @@ Engine_Ouroboros : CroneEngine {
             var playhead = ToggleFF.kr(t_trig);
 			var snd0 = PlayBuf.ar(2,buf,rate:BufRateScale.ir(buf),loop:1,trigger:1-playhead);
 			var snd1 = PlayBuf.ar(2,buf,rate:BufRateScale.ir(buf),loop:1,trigger:playhead);
-			var snd = SelectX.ar(Lag.kr(playhead),[snd0,snd1]);
+			var snd = SelectX.ar(Lag.kr(playhead,xfade),[snd0,snd1]);
             var reverbSend = 0.25;
 			snd = snd * amp * EnvGen.ar(Env.adsr(3,1,1,3),1-done,doneAction:2);
 			Out.ar(busCompress,0*snd);

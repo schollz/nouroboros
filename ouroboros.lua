@@ -8,17 +8,20 @@
 --    ▼ instructions below ▼
 --
 
+lattice_ = require("lattice")
+grid_=include("lib/ggrid")
 musicutil=require("musicutil")
 engine.name="Ouroboros"
 
 --
 -- SONG SPECIFIC
 --
-bpm=120
+bpm=90
 chords={
-  {chord="I",beats=1},
-  {chord="V",beats=1},
-  {chord="vi",beats=2},
+  {chord="I",chord2="ii",beats=4},
+  {chord="V","vi",beats=4},
+  {chord="vi","vii",beats=3},
+  {chord="iii","I",beats=5},
 }
 --
 -- THANKS
@@ -29,6 +32,7 @@ chords={
 --
 beats_total=0
 rec_queue={}
+notes_on = {}
 
 -- script
 --
@@ -101,6 +105,42 @@ function init()
   params:default()
   params:bang()
 
+    -- setup the chords
+  for i,c in ipairs(chords) do 
+    local m = {}
+    tab.print(c)
+    for octave=5,0,-1 do 
+      local r ={}
+      notes = musicutil.generate_chord_roman(12+octave*12,1,c.chord)
+      for _, note in ipairs(notes) do 
+        table.insert(r,note)
+      end
+      notes = musicutil.generate_chord_roman(24+octave*12,1,c.chord2)
+      for _, note in ipairs(notes) do 
+        table.insert(r,note)
+      end
+      table.insert(m,r)
+      tab.print(r)
+    end
+    chords[i].m=m
+  end
+
+  
+  -- setup midi
+  midi_device={}
+  for i,dev in pairs(midi.devices) do
+    print(i,dev,dev.port)
+    if dev.port~=nil then
+      local connection=midi.connect(dev.port)
+      local name=string.lower(dev.name).." "..i
+      print("adding "..name.." as midi device")
+      midi_device[name] = connection
+    end
+  end
+
+
+  -- initialize grid 
+  g_ = grid_:new()
 
   clock.run(function()
     while true do
@@ -115,24 +155,70 @@ function init()
   end
   clock_beat=0
   clock_chord=1
-  clock.run(function()
-    while true do
-      clock.sync(1)
-      clock_beat=clock_beat+1
-      -- print("[clock] beat",clock_beat)
-      if (clock_beat>chords[clock_chord].beats) then
-        clock_beat=1
-        clock_chord=clock_chord+1
-        if clock_chord>#chords then
-          -- print("[clock] new phrase")
-          clock_chord=1
-          engine.sync()
-          rec_queue_down()
+  local lattice = lattice_:new()
+  lattice:new_pattern{
+    action=function(t)
+        clock_beat=clock_beat+1
+        -- print("[clock] beat",clock_beat)
+        if (clock_beat>chords[clock_chord].beats) then
+          clock_beat=1
+          clock_chord=clock_chord+1
+          if clock_chord>#chords then
+            -- print("[clock] new phrase")
+            clock_chord=1
+            engine.sync()
+            rec_queue_down()
+          end
+          -- print("[clock] new chord",chords[clock_chord].chord)
         end
-        -- print("[clock] new chord",chords[clock_chord].chord)
+    end,
+    division=1/4,
+  }
+  -- arp
+  arp_beat = 0
+  lattice:new_pattern{
+    action=function(t)
+      arp_beat = arp_beat + 1
+      if #notes_on==2 then 
+        local x=notes_on[arp_beat%#notes_on+1]
+        local note=chords[clock_chord].m[x[1]][x[2]]
+        note_play(note)
       end
-    end
-  end)
+    end,
+    division=1/16,
+  }
+  arp_beat2 = 0
+  lattice:new_pattern{
+    action=function(t)
+      arp_beat2 = arp_beat2 + 1
+      if #notes_on==3 then 
+        local x=notes_on[arp_beat2%#notes_on+1]
+        local note=chords[clock_chord].m[x[1]][x[2]]
+        note_play(note)
+      end
+    end,
+    division=1/24,
+  }
+  arp_beat3 = 0
+  lattice:new_pattern{
+    action=function(t)
+      arp_beat3 = arp_beat3 + 1
+      if #notes_on>3 then 
+        local x=notes_on[arp_beat3%#notes_on+1]
+        local note=chords[clock_chord].m[x[1]][x[2]]
+        note_play(note)
+      end
+    end,
+    division=1/32,
+  }
+  lattice:hard_restart()
+
+
+end
+
+function note_play(note)
+  midi_device['boutique 3']:note_on(note,120,1)
+  midi_device['boutique 3']:note_off(note,120,1)
 end
 
 function rec_queue_up(x)
