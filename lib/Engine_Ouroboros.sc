@@ -129,7 +129,7 @@ Engine_Ouroboros : CroneEngine {
 
 		this.addCommand("record","if",{ arg msg;
             var id=msg[1];
-            var seconds=msg[2].asFloat+xfade;
+            var seconds=msg[2].asFloat+(xfade*1.5);
 
             // initiate a routine to automatically start playing loop
             Routine {

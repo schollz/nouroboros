@@ -1,7 +1,6 @@
 -- local pattern_time = require("pattern")
 local GGrid={}
 
-
 function GGrid:new(args)
   local m=setmetatable({},{__index=GGrid})
   local args=args==nil and {} or args
@@ -27,7 +26,6 @@ function GGrid:new(args)
     end
   end
 
-
   -- keep track of pressed buttons
   m.pressed_buttons={}
 
@@ -44,7 +42,6 @@ function GGrid:new(args)
   return m
 end
 
-
 function GGrid:grid_key(x,y,z)
   self:key_press(y,x,z==1)
   self:grid_redraw()
@@ -57,28 +54,31 @@ function GGrid:key_press(row,col,on)
     self.pressed_buttons[row..","..col]=nil
   end
 
-  if row>=3 and col<=6 then 
-    local note = chords[clock_chord].m[row-2][col]
-    if on then 
-        if #notes_on==0 then 
-            note_play(note)
-        end
-        table.insert(notes_on,{row-2,col,note})
+  if row>=3 and col<=6 then
+    local note=chords[clock_chord].m[row-2][col]
+    if on then
+      if #notes_on==0 then
+        note_play(note)
+      end
+      table.insert(notes_on,{row-2,col,note})
     else
-        print("note off")
-        local j=0
-        for i,v in ipairs(notes_on) do 
-            if v[1]==row-2 and v[2]==col then 
-                j=i
-            end
+      print("note off")
+      local j=0
+      for i,v in ipairs(notes_on) do
+        if v[1]==row-2 and v[2]==col then
+          j=i
         end
-        if j>0 then 
-            table.remove(notes_on,j)
-        end
+      end
+      if j>0 then
+        table.remove(notes_on,j)
+      end
+    end
+  elseif col==16 then
+    if on then
+      params:set("loop",row)
     end
   end
 end
-
 
 function GGrid:get_visual()
   -- clear visual
@@ -91,7 +91,18 @@ function GGrid:get_visual()
     end
   end
 
+  -- illuminate current loop
+  for i,loop in ipairs(rec_queue) do
+    self.visual[loop][16]=9-i
+  end
+  self.visual[params:get("loop")][16]=15
 
+  -- illuminate parameters
+  for i,pram in ipairs(params_grid) do
+    for row=9-params:get(pram..params:get("loop")),8 do
+      self.visual[row][i+6]=7
+    end
+  end
 
   -- illuminate currently pressed button
   for k,_ in pairs(self.pressed_buttons) do
@@ -101,7 +112,6 @@ function GGrid:get_visual()
 
   return self.visual
 end
-
 
 function GGrid:grid_redraw()
   self.g:all(0)
