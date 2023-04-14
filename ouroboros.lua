@@ -8,8 +8,9 @@
 --    ▼ instructions below ▼
 --
 
-lattice_=require("lattice")
+utils=include("lib/utils")
 grid_=include("lib/ggrid")
+lattice_=require("lattice")
 musicutil=require("musicutil")
 engine.name="Ouroboros"
 
