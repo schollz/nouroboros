@@ -17,12 +17,12 @@ engine.name="Ouroboros"
 --
 -- SONG SPECIFIC
 --
-bpm=120
+bpm=90
 chords={
-  {chord="I",chord2="ii",beats=2},
+  {chord="I",chord2="ii",beats=4},
   {chord="V","vi",beats=2},
-  {chord="vi","vii",beats=2},
-  {chord="iii","I",beats=2},
+  {chord="vi","vii",beats=4},
+  {chord="iii","I",beats=4},
 }
 --
 -- THANKS
@@ -154,17 +154,29 @@ function init()
     division=1/4,
   }
   -- arp
+  arp_beat0=0
+  lattice:new_pattern{
+    action=function(t)
+      arp_beat0=arp_beat0+1
+      if #notes_on==1 then
+        local x=notes_on[arp_beat0%#notes_on+1]
+        local note=params:get("hold_change"..params:get("loop"))==2 and chords[clock_chord].m[x[1]][x[2]] or x[3]
+        note_play(note)
+      end
+    end,
+    division=1/4,
+  }
   arp_beat=0
   lattice:new_pattern{
     action=function(t)
       arp_beat=arp_beat+1
       if #notes_on==2 then
         local x=notes_on[arp_beat%#notes_on+1]
-        local note=chords[clock_chord].m[x[1]][x[2]]
+        local note=params:get("hold_change"..params:get("loop"))==2 and chords[clock_chord].m[x[1]][x[2]] or x[3]
         note_play(note)
       end
     end,
-    division=1/16,
+    division=1/8,
   }
   arp_beat2=0
   lattice:new_pattern{
@@ -172,11 +184,11 @@ function init()
       arp_beat2=arp_beat2+1
       if #notes_on==3 then
         local x=notes_on[arp_beat2%#notes_on+1]
-        local note=chords[clock_chord].m[x[1]][x[2]]
+        local note=params:get("hold_change"..params:get("loop"))==2 and chords[clock_chord].m[x[1]][x[2]] or x[3]
         note_play(note)
       end
     end,
-    division=1/24,
+    division=1/12,
   }
   arp_beat3=0
   lattice:new_pattern{
@@ -184,11 +196,11 @@ function init()
       arp_beat3=arp_beat3+1
       if #notes_on>3 then
         local x=notes_on[arp_beat3%#notes_on+1]
-        local note=chords[clock_chord].m[x[1]][x[2]]
+        local note=params:get("hold_change"..params:get("loop"))==2 and chords[clock_chord].m[x[1]][x[2]] or x[3]
         note_play(note)
       end
     end,
-    division=1/32,
+    division=1/16,
   }
   lattice:hard_restart()
 
@@ -200,6 +212,7 @@ function note_play(note)
 end
 
 function rec_queue_up(x)
+  print("[debug] rec_queue_up",x)
   -- don't queue up twice
   for _,v in ipairs(rec_queue) do
     if v==x then
@@ -308,7 +321,7 @@ end
 
 function params_loop()
   local params_menu={
-    {id="arp_hold",name="arp hold",min=1,max=2,exp=false,div=1,default=0,unit="",values={"no","yes"}},
+    {id="hold_change",name="arp hold",min=1,max=2,exp=false,div=1,default=2,unit="",values={"no","yes"}},
     {id="loop_times",name="loop times",min=1,max=3,exp=false,div=1,default=0,unit="",values={"x1","x2","x4"}},
     {id="level",name="volume",min=1,max=8,exp=false,div=1,default=6,unit="level",values={-96,-12,-9,-6,-3,0,3,6}},
   }
