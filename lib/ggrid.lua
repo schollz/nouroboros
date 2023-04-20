@@ -39,6 +39,10 @@ function GGrid:new(args)
   end
   m.grid_refresh:start()
 
+  m.blinks = {
+    {v=0,max=15}
+  }
+
   return m
 end
 
@@ -48,10 +52,10 @@ function GGrid:grid_key(x,y,z)
 end
 
 function GGrid:key_held_action(row,col)
-  if col==16 then
-    -- enqueue recording
-    rec_queue_up(row)
-  end
+  -- if col==16 then
+  --   -- enqueue recording
+  --   rec_queue_up(row)
+  -- end
 
 end
 
@@ -65,18 +69,21 @@ function GGrid:key_press(row,col,on)
     self.pressed_buttons[k]=nil
   end
 
-  if row>=3 and col<=6 then
-    local note=chords[clock_chord].m[row-2][col]
+  if row>=2 and row<=7 and col>=2 and col<=7 then
+    -- note space
+    local r = row-1
+    local c = col-1
+    local note=chords[clock_chord].m[r][c]
     if on then
       if #notes_on==0 then
         note_play(note)
       end
-      table.insert(notes_on,{row-2,col,note})
+      table.insert(notes_on,{r,c,note})
     else
       print("note off")
       local j=0
       for i,v in ipairs(notes_on) do
-        if v[1]==row-2 and v[2]==col then
+        if v[1]==r and v[2]==c then
           j=i
         end
       end
@@ -84,18 +91,29 @@ function GGrid:key_press(row,col,on)
         table.remove(notes_on,j)
       end
     end
-  elseif col==16 then
+  elseif row==1 and col<=8 then 
+    -- register recording queuee
+    rec_queue_up(col)
+  elseif row==8 and col<=8 then
     if not on and time_on<20 then
-      params:set("loop",row)
+      params:set("loop",col)
     end
-  elseif row==2 and col==1 then
-    if on then
-      params:set("hold_change"..params:get("loop"),3-params:get("hold_change"..params:get("loop")))
-    end
+  -- elseif row==2 and col==1 then
+  --   if on then
+  --     params:set("hold_change"..params:get("loop"),3-params:get("hold_change"..params:get("loop")))
+  --   end
   end
 end
 
 function GGrid:get_visual()
+  -- do blinking
+  for i,v in ipairs(self.blinks) do 
+    self.blinks[i].v = self.blinks[i].v + 1
+    if self.blinks[i].v > self.blinks[i].max then 
+      self.blinks[i].v = 0
+    end
+  end
+
   -- clear visual
   for row=1,8 do
     for col=1,self.grid_width do
@@ -106,11 +124,21 @@ function GGrid:get_visual()
     end
   end
 
-  -- illuminate current loop
+  -- illuminate loops in recording queu
   for i,loop in ipairs(rec_queue) do
-    self.visual[loop][16]=9-i
+    self.visual[1][loop]=5
   end
-  self.visual[params:get("loop")][16]=15
+  -- illuminate currently recording loop
+  if rec_current>0 then 
+    self.visual[1][rec_current] = 15
+  end
+
+  -- illuminate loops that have data
+  for loop,_ in pairs(loops_recorded) do 
+    self.visual[8][loop]=5
+  end
+  -- illuminate current loop
+  self.visual[8][params:get("loop")]=15
 
   -- illuminate parameters
   for i,pram in ipairs(params_grid) do
@@ -119,8 +147,6 @@ function GGrid:get_visual()
     end
   end
 
-  -- illuminate hold change
-  self.visual[2][1]=params:get("hold_change"..params:get("loop"))==2 and 14 or 4
 
   -- illuminate currently pressed button
   for k,_ in pairs(self.pressed_buttons) do

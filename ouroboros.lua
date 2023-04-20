@@ -34,6 +34,7 @@ chords={
 beats_total=0
 rec_queue={}
 rec_current=0
+loops_recorded={}
 notes_on={}
 position={1,1}
 params_grid={"level"}
@@ -153,55 +154,41 @@ function init()
     end,
     division=1/4,
   }
-  -- arp
-  arp_beat0=0
-  lattice:new_pattern{
-    action=function(t)
-      arp_beat0=arp_beat0+1
-      if #notes_on==1 then
-        local x=notes_on[arp_beat0%#notes_on+1]
-        local note=params:get("hold_change"..params:get("loop"))==2 and chords[clock_chord].m[x[1]][x[2]] or x[3]
-        note_play(note)
-      end
-    end,
-    division=1/4,
-  }
-  arp_beat=0
-  lattice:new_pattern{
-    action=function(t)
-      arp_beat=arp_beat+1
-      if #notes_on==2 then
-        local x=notes_on[arp_beat%#notes_on+1]
-        local note=params:get("hold_change"..params:get("loop"))==2 and chords[clock_chord].m[x[1]][x[2]] or x[3]
-        note_play(note)
-      end
-    end,
-    division=1/8,
-  }
-  arp_beat2=0
-  lattice:new_pattern{
-    action=function(t)
-      arp_beat2=arp_beat2+1
-      if #notes_on==3 then
-        local x=notes_on[arp_beat2%#notes_on+1]
-        local note=params:get("hold_change"..params:get("loop"))==2 and chords[clock_chord].m[x[1]][x[2]] or x[3]
-        note_play(note)
-      end
-    end,
-    division=1/12,
-  }
-  arp_beat3=0
-  lattice:new_pattern{
-    action=function(t)
-      arp_beat3=arp_beat3+1
-      if #notes_on>3 then
-        local x=notes_on[arp_beat3%#notes_on+1]
-        local note=params:get("hold_change"..params:get("loop"))==2 and chords[clock_chord].m[x[1]][x[2]] or x[3]
-        note_play(note)
-      end
-    end,
-    division=1/16,
-  }
+
+  -- clocks for the arps
+  -- arp options
+  for i, denominator in ipairs({4,8,12,16,18,24,32}) do 
+    local arp_beat = 0
+    lattice:new_pattern{
+      action=function(t)
+        arp_beat=arp_beat+1
+        local num_notes_on = #notes_on
+        local do_play_note = false 
+        if params:get("arp_option")==1 then 
+          do_play_note = (num_notes_on==1 and denominator==4) 
+          do_play_note = do_play_note or (num_notes_on==2 and denominator==8) 
+          do_play_note = do_play_note or (num_notes_on==3 and denominator==12) 
+          do_play_note = do_play_note or (num_notes_on>=4 and denominator==16) 
+        elseif params:get("arp_option")==2 then 
+          do_play_note = (num_notes_on<=2 and denominator==6) 
+          do_play_note = do_play_note or (num_notes_on==3 or num_notes_on==4 and denominator==12) 
+          do_play_note = do_play_note or (num_notes_on>4 and denominator==18) 
+        elseif params:get("arp_option")==3 then 
+          do_play_note = (num_notes_on==1 and denominator==4) 
+          do_play_note = do_play_note or (num_notes_on==2 and denominator==16) 
+          do_play_note = do_play_note or (num_notes_on==3 and denominator==24) 
+          do_play_note = do_play_note or (num_notes_on>=4 and denominator==32) 
+        end
+        if do_play_note then
+          local x=notes_on[arp_beat%num_notes_on+1]
+          local note=params:get("hold_change"..params:get("loop"))==2 and chords[clock_chord].m[x[1]][x[2]] or x[3]
+          note_play(note)
+        end
+      end,
+      division=1/denominator,
+    }
+  end
+
   lattice:hard_restart()
 
 end
@@ -226,6 +213,7 @@ end
 function rec_queue_down()
   if rec_current>0 then
     print("[rec] finished recording",rec_current)
+    loops_recorded[rec_current]=true
   end
   if next(rec_queue)==nil then
     rec_current=0
@@ -322,6 +310,7 @@ end
 function params_loop()
   local params_menu={
     {id="hold_change",name="arp hold",min=1,max=2,exp=false,div=1,default=2,unit="",values={"no","yes"}},
+    {id="arp_option",name="arp speeds",min=1,max=3,exp=false,div=1,default=1,unit="",values={"normal","triplets","fast"}},
     {id="loop_times",name="loop times",min=1,max=3,exp=false,div=1,default=0,unit="",values={"x1","x2","x4"}},
     {id="level",name="volume",min=1,max=8,exp=false,div=1,default=6,unit="level",values={-96,-12,-9,-6,-3,0,3,6}},
   }
