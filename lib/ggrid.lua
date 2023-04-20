@@ -48,7 +48,7 @@ function GGrid:grid_key(x,y,z)
 end
 
 function GGrid:key_held_action(row,col)
-  if col==16 then 
+  if col==16 then
     -- enqueue recording
     rec_queue_up(row)
   end
@@ -88,9 +88,9 @@ function GGrid:key_press(row,col,on)
     if not on and time_on<20 then
       params:set("loop",row)
     end
-  elseif row==2 and col==1 then 
-    if on then 
-     params:set("hold_change"..params:get("loop"),3-params:get("hold_change"..params:get("loop")))
+  elseif row==2 and col==1 then
+    if on then
+      params:set("hold_change"..params:get("loop"),3-params:get("hold_change"..params:get("loop")))
     end
   end
 end
@@ -120,11 +120,11 @@ function GGrid:get_visual()
   end
 
   -- illuminate hold change
-  self.visual[2][1] = params:get("hold_change"..params:get("loop"))==2 and 14 or 4
+  self.visual[2][1]=params:get("hold_change"..params:get("loop"))==2 and 14 or 4
 
   -- illuminate currently pressed button
   for k,_ in pairs(self.pressed_buttons) do
-    self.pressed_buttons[k] = self.pressed_buttons[k]+1
+    self.pressed_buttons[k]=self.pressed_buttons[k]+1
     local row,col=k:match("(%d+),(%d+)")
     row=tonumber(row)
     col=tonumber(col)
