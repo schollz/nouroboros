@@ -337,7 +337,7 @@ end
 function params_loop()
   local params_menu={
     {id="level",name="volume",min=1,max=8,exp=false,div=1,default=6,unit="level",values={-96,-12,-9,-6,-3,0,3,6}},
-    {id="hold_change",name="arp hold",min=0,max=1,exp=false,div=1,default=0,unit="",values={"no","yes"}},
+    {id="hold_change",name="arp hold",min=1,max=2,exp=false,div=1,default=0,unit="",values={"no","yes"}},
     {id="arp_option",name="arp speeds",min=1,max=3,exp=false,div=1,default=1,unit="",values={"normal","triplets","fast"}},
     {id="loop_times",name="loop times",min=1,max=3,exp=false,div=1,default=0,unit="",values={"x1","x2","x4"}},
   }

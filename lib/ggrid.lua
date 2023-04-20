@@ -111,7 +111,7 @@ function GGrid:key_press(row,col,on)
   elseif row==7 and col==8 then
     -- hold changer
     if on then
-      pset("hold_change",1-pget("hold_change"))
+      pset("hold_change",3-pget("hold_change"))
     end
   end
 end
@@ -155,7 +155,7 @@ function GGrid:get_visual()
 
   -- illuminate the arp option lights
   for i,v in ipairs(arp_option_lights) do 
-    self.visual[i+3][8] = v*10 + (pget("arp_option")==i and 5)
+    self.visual[i+3][8] = v*10 + (pget("arp_option")==i and 5 or 0)
   end
   -- illuminate the hold change
   self.visual[7][8] = pget("hold_change")*10
