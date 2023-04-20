@@ -91,6 +91,9 @@ function GGrid:key_press(row,col,on)
         table.remove(notes_on,j)
       end
     end
+  elseif row>=2 and row<=4 and col==8 then 
+    -- arp options
+    params:set("arp_option",row-1)
   elseif row==1 and col<=8 then 
     -- register recording queuee
     rec_queue_up(col)
@@ -145,6 +148,11 @@ function GGrid:get_visual()
     for row=9-params:get(pram..params:get("loop")),8 do
       self.visual[row][i+6]=7
     end
+  end
+
+  -- illuminate the arp option lights
+  for i,v in ipairs(arp_option_lights) do 
+    self.visual[i+1][8] = v*10 + (params:get("arp_option")==i and 5)
   end
 
 
