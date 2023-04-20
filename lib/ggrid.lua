@@ -91,20 +91,28 @@ function GGrid:key_press(row,col,on)
         table.remove(notes_on,j)
       end
     end
-  elseif row>=2 and row<=4 and col==8 then 
+  elseif row>=4 and row<=6 and col==8 then 
     -- arp options
-    params:set("arp_option",row-1)
+    if on then 
+      pset("arp_option",row-1)
+    end
   elseif row==1 and col<=8 then 
-    -- register recording queuee
-    rec_queue_up(col)
+    -- register recording queue
+    if on then 
+      rec_queue_up(col)
+    end
   elseif row==8 and col<=8 then
-    if not on and time_on<20 then
+    -- set loop
+    if on then 
       params:set("loop",col)
     end
-  -- elseif row==2 and col==1 then
-  --   if on then
-  --     params:set("hold_change"..params:get("loop"),3-params:get("hold_change"..params:get("loop")))
-  --   end
+    -- if not on and time_on<20 then
+    -- end
+  elseif row==7 and col==8 then
+    -- hold changer
+    if on then
+      pset("hold_change",1-pget("hold_change"))
+    end
   end
 end
 
@@ -131,6 +139,7 @@ function GGrid:get_visual()
   for i,loop in ipairs(rec_queue) do
     self.visual[1][loop]=5
   end
+
   -- illuminate currently recording loop
   if rec_current>0 then 
     self.visual[1][rec_current] = 15
@@ -140,20 +149,16 @@ function GGrid:get_visual()
   for loop,_ in pairs(loops_recorded) do 
     self.visual[8][loop]=5
   end
+
   -- illuminate current loop
   self.visual[8][params:get("loop")]=15
 
-  -- illuminate parameters
-  for i,pram in ipairs(params_grid) do
-    for row=9-params:get(pram..params:get("loop")),8 do
-      self.visual[row][i+6]=7
-    end
-  end
-
   -- illuminate the arp option lights
   for i,v in ipairs(arp_option_lights) do 
-    self.visual[i+1][8] = v*10 + (params:get("arp_option")==i and 5)
+    self.visual[i+3][8] = v*10 + (pget("arp_option")==i and 5)
   end
+  -- illuminate the hold change
+  self.visual[7][8] = pget("hold_change")*10
 
 
   -- illuminate currently pressed button
@@ -168,6 +173,23 @@ function GGrid:get_visual()
     end
     self.visual[row][col]=15
   end
+
+
+  -- illuminate the notes
+  -- (special)
+  for i=1,6 do 
+    for j=1,6 do 
+      local row=i+1
+      local col=j+1
+      if note_location_playing~=nil and note_location_playing[1]==i and note_location_playing[2]==j then
+        self.visual[row][col]=15
+      else
+        self.visual[row][col]=loop_db[params:get("loop")]
+      end
+    end
+  end
+
+
 
   return self.visual
 end

@@ -34,10 +34,13 @@ chords={
 beats_total=0
 rec_queue={}
 rec_current=0
+rec_loops=0
 loops_recorded={}
 notes_on={}
 position={1,1}
 params_grid={"level"}
+loop_db={0,0,0,0,0,0,0,0}
+note_location_playing=nil
 
 -- script
 --
@@ -71,6 +74,9 @@ function init()
     oscnotify=function(args)
       print("file edited ok!")
       rerun()
+    end,
+    loop_db=function(args)
+      loop_db[tonumber(args[1])]=util.clamp(util.round(util.linlin(-48,12,0,10,tonumber(args[2]))),0,15)
     end,
   }
   osc.event=function(path,args,from)
@@ -147,7 +153,12 @@ function init()
           -- print("[clock] new phrase")
           clock_chord=1
           engine.sync()
-          rec_queue_down()
+          if rec_loops>0 then 
+            rec_loops = rec_loops -1 
+          end
+          if rec_loops==0 then 
+            rec_queue_down()
+          end
         end
         -- print("[clock] new chord",chords[clock_chord].chord)
       end
@@ -165,18 +176,18 @@ function init()
         arp_beat=arp_beat+1
         local num_notes_on = #notes_on
         local do_play_note = false 
-        if params:get("arp_option")==1 then 
+        if pget("arp_option")==1 then 
           do_play_note = (num_notes_on==1 and denominator==4) 
           do_play_note = do_play_note or (num_notes_on==2 and denominator==8) 
           do_play_note = do_play_note or (num_notes_on==3 and denominator==12) 
           do_play_note = do_play_note or (num_notes_on>=4 and denominator==16) 
           arp_option_lights[1] = do_play_note and 1 or 0
-        elseif params:get("arp_option")==2 then 
+        elseif pget("arp_option")==2 then 
           do_play_note = (num_notes_on<=2 and denominator==6) 
           do_play_note = do_play_note or (num_notes_on==3 or num_notes_on==4 and denominator==12) 
           do_play_note = do_play_note or (num_notes_on>4 and denominator==18) 
           arp_option_lights[2] = do_play_note and 1 or 0
-        elseif params:get("arp_option")==3 then 
+        elseif pget("arp_option")==3 then 
           do_play_note = (num_notes_on==1 and denominator==8) 
           do_play_note = do_play_note or (num_notes_on==2 and denominator==16) 
           do_play_note = do_play_note or (num_notes_on==3 and denominator==24) 
@@ -185,7 +196,8 @@ function init()
         end
         if do_play_note then
           local x=notes_on[arp_beat%num_notes_on+1]
-          local note=params:get("hold_change"..params:get("loop"))==2 and chords[clock_chord].m[x[1]][x[2]] or x[3]
+          local note=pget("hold_change")==2 and chords[clock_chord].m[x[1]][x[2]] or x[3]
+          note_location_playing={x[1],x[2]}
           note_play(note)
         end
       end,
@@ -197,9 +209,18 @@ function init()
 
 end
 
+function pget(k) 
+  return params:get(k..params:get("loop"))
+end
+
+function pset(k,v) 
+  return params:set(k..params:get("loop"),v)
+end
+
 function note_play(note)
-  midi_device['boutique 3']:note_on(note,120,1)
-  midi_device['boutique 3']:note_off(note,120,1)
+  print("[note_play]",note)
+  -- midi_device['boutique 3']:note_on(note,120,1)
+  -- midi_device['boutique 3']:note_off(note,120,1)
 end
 
 function rec_queue_up(x)
@@ -227,6 +248,8 @@ function rec_queue_down()
   engine.record(x,beats_total*clock.get_beat_sec())
   params:set("loop",x)
   print("[rec] recording",x)
+  rec_loops=pget("loop_times")
+  rec_loops = rec_loops<3 and rec_loops or 4
   rec_current=x
 end
 
@@ -313,10 +336,10 @@ end
 
 function params_loop()
   local params_menu={
-    {id="hold_change",name="arp hold",min=1,max=2,exp=false,div=1,default=2,unit="",values={"no","yes"}},
+    {id="level",name="volume",min=1,max=8,exp=false,div=1,default=6,unit="level",values={-96,-12,-9,-6,-3,0,3,6}},
+    {id="hold_change",name="arp hold",min=0,max=1,exp=false,div=1,default=0,unit="",values={"no","yes"}},
     {id="arp_option",name="arp speeds",min=1,max=3,exp=false,div=1,default=1,unit="",values={"normal","triplets","fast"}},
     {id="loop_times",name="loop times",min=1,max=3,exp=false,div=1,default=0,unit="",values={"x1","x2","x4"}},
-    {id="level",name="volume",min=1,max=8,exp=false,div=1,default=6,unit="level",values={-96,-12,-9,-6,-3,0,3,6}},
   }
   params:add_number("loop","loop",1,8,1)
   params:set_action("loop",function(x)
