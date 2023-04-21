@@ -56,7 +56,6 @@ function GGrid:key_held_action(row,col)
   --   -- enqueue recording
   --   rec_queue_up(row)
   -- end
-
 end
 
 function GGrid:key_press(row,col,on)

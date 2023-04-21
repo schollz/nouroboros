@@ -257,10 +257,6 @@ function key(k,z)
   if k==3 then
     g_:key_press(position[1],position[2],z==1)
   end
-  if k==2 and z==1 then
-    rec_queue_up(2)
-    rec_queue_up(5)
-  end
 end
 
 function enc(k,d)
