@@ -69,7 +69,6 @@ Engine_Ouroboros : CroneEngine {
 			var snd = SelectX.ar(Lag.kr(playhead,xfade),[snd0,snd1]);
             var reverbSend = 0.25;
 			snd = snd * amp * EnvGen.ar(Env.adsr(3,1,1,3),1-done,doneAction:2);
-			SendReply.kr(Impulse.kr(10),"/loop_db",[id,Amplitude.kr(snd)]);
 			Out.ar(busCompress,0*snd);
 			Out.ar(busNoCompress,(1-reverbSend)*snd);
 			Out.ar(busReverb,reverbSend*snd);
@@ -79,8 +78,14 @@ Engine_Ouroboros : CroneEngine {
 			arg id,buf,t_trig,busReverb,busCompress,busNoCompress,db=0,done=0;
             var amp = db.dbamp;
             var snd = SoundIn.ar([0,1]);
-			SendReply.kr(Impulse.kr(10),"/loop_db",[id,Amplitude.kr(snd)]);
             RecordBuf.ar(snd,buf,loop:0,doneAction:2);
+			Out.ar(0,Silent.ar(2));
+		}).add;
+
+		SynthDef("track_input",{
+			arg id,buf,t_trig,busReverb,busCompress,busNoCompress,db=0,done=0;
+            var snd = SoundIn.ar([0,1]);
+			SendReply.kr(Impulse.kr(10),"/loop_db",[id,Lag.kr(Amplitude.kr(snd),0.5)]);
 			Out.ar(0,Silent.ar(2));
 		}).add;
 
@@ -97,9 +102,9 @@ Engine_Ouroboros : CroneEngine {
 			var oscRoute=msg[0];
 			var synNum=msg[1];
 			var dunno=msg[2];
-			var loop=msg[3].asInteger;
-			var db=msg[4].ampdb;
-			NetAddr("127.0.0.1", 10111).sendMsg("loop_db",loop,db);
+			var id=msg[3].asInteger;
+			var db=msg[4].asFloat.ampdb;
+			NetAddr("127.0.0.1", 10111).sendMsg("loop_db",id,db);
 		}, '/loop_db'));
 		
 		// define buses
@@ -114,6 +119,8 @@ Engine_Ouroboros : CroneEngine {
             busNoCompress: buses.at("busNoCompress"),
             busCompress: buses.at("busCompress"),
         ]));
+		syns.put("track_input",Synth.head(server,"track_input"));
+
 		server.sync;
 		"done loading.".postln;
 
