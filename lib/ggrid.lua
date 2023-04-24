@@ -112,6 +112,9 @@ function GGrid:key_press(row,col,on)
     if on then
       pset("hold_change",3-pget("hold_change"))
     end
+  elseif col>=9 then 
+    -- set zeemo
+    zeemo:set(col-8,(row-1)/7)
   end
 end
 
@@ -173,6 +176,13 @@ function GGrid:get_visual()
     self.visual[row][col]=15
   end
 
+  -- illuminate zeemo
+  for col=9,16 do 
+    local rowmin=util.round((1-zeemo:get(col-8))*7)+1
+    for row=rowmin,8 do 
+      self.visual[row][col] = 7
+    end
+  end
 
   -- illuminate the notes
   -- (special)

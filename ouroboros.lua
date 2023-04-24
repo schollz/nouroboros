@@ -10,6 +10,7 @@
 
 utils=include("lib/utils")
 grid_=include("lib/ggrid")
+zeemo_=include("lib/zeemo")
 lattice_=require("lattice")
 musicutil=require("musicutil")
 engine.name="Ouroboros"
@@ -90,7 +91,11 @@ function init()
     end
   end
 
+  -- setup zeemo
+  zeemo=zeemo_:new()
+
   params_loop()
+
 
   params:default()
   params:bang()

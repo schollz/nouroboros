@@ -26,7 +26,6 @@ function Zeemo:init()
   end
   if not found_midi then 
     print("[zeemo] could not find midi")
-    do return end 
   end
 
   -- setup the parameters
@@ -52,14 +51,28 @@ function Zeemo:init()
         if pram.id=="cv" then 
           -- convert 14-bit number to 70-bit
           local l,h = self:unpack(x)
-          self.midi:cc(cv,l,h)
+          if found_midi then 
+            self.midi:cc(cv,l,h)
+          end
         elseif pram.id=="cvunity" then 
           x = util.clamp(x,0,1)
-          params:set("zeemo_cv"..cv,util.linlin(0,1,params:get("zeemo_cvmin"..cv),params:get("zeemo_cvmax"..cv),x))
+          params:set("zeemo_cv"..cv,
+            util.linlin(0,1,params:get("zeemo_cvmin"..cv),params:get("zeemo_cvmax"..cv),x))
+        elseif pram.id=="cvmax" or pram.id=="cvmin" then 
+          params:set("zeemo_cv"..cv,
+            util.linlin(0,1,params:get("zeemo_cvmin"..cv),params:get("zeemo_cvmax"..cv),params:get("zeemo_cvunity"..cv)))
         end
       end)
     end
   end
+end
+
+function Zeemo:set(i,x)
+  params:set("zeemo_cvunity"..i,x)
+end
+
+function Zeemo:get(i)
+  return params:get("zeemo_cvunity"..i)
 end
 
 return Zeemo
