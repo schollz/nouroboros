@@ -78,7 +78,7 @@ function GGrid:key_press(row,col,on)
         note_play(note)
       end
       table.insert(notes_on,{r,c,note})
-      crow.output[2].action=string.format("adsr(%2.3f,0.25,5,0.25)",util.linlin(1,127,0.25,1,note))
+      crow.output[2].action=string.format("adsr(%2.3f,0.25,5,0.25)",util.linlin(1,127,0.05,0.5,note))
       crow.output[2](true)
     else
       print("note off")

@@ -23,6 +23,10 @@ chords={
   {chord="V","vi",beats=2},
   {chord="vi","vii",beats=4},
   {chord="iii","I",beats=4},
+  {chord="IV",chord2="ii",beats=4},
+  {chord="V","vi",beats=4},
+  {chord="vi","vii",beats=4},
+  {chord="I","I",beats=4},
 }
 --
 -- THANKS
