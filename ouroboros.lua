@@ -10,6 +10,7 @@
 
 utils=include("lib/utils")
 grid_=include("lib/ggrid")
+looper_=include("lib/looper")
 lattice_=require("lattice")
 musicutil=require("musicutil")
 engine.name="Ouroboros"
@@ -35,16 +36,9 @@ chords={
 --
 -- globals
 --
-beats_total=0
-rec_queue={}
-rec_current=0
-rec_loops=0
-loops_recorded={}
-notes_on={}
 position={1,1}
 params_grid={"level"}
 loop_db={0,0,0,0,0,0,0,0}
-note_location_playing=nil
 
 -- script
 --
@@ -81,7 +75,8 @@ function init()
       rerun()
     end,
     loop_db=function(args)
-      loop_db[params:get("loop")]=util.clamp(util.round(util.linlin(-48,12,0,10,tonumber(args[2]))),0,15)
+      -- local side=tonumber(args[1])
+      -- loop_db[params:get("loop")]=util.clamp(util.round(util.linlin(-48,12,0,10,tonumber(args[2]))),0,15)
     end,
   }
   osc.event=function(path,args,from)
@@ -95,7 +90,10 @@ function init()
     end
   end
 
-  params_loop()
+  loopers={}
+  for i=1,2 do
+    table.insert(loopers,looper_:new{id=i})
+  end
 
   params:default()
   params:bang()
@@ -141,6 +139,7 @@ function init()
   end)
 
   -- start the looper
+  beats_total=0
   for _,c in ipairs(chords) do
     beats_total=beats_total+c.beats
   end
@@ -158,11 +157,8 @@ function init()
           -- print("[clock] new phrase")
           clock_chord=1
           engine.sync()
-          if rec_loops>0 then 
-            rec_loops = rec_loops -1 
-          end
-          if rec_loops==0 then 
-            rec_queue_down()
+          for _,l in ipairs(loopers) do
+            l:clock_loops()
           end
         end
         -- print("[clock] new chord",chords[clock_chord].chord)
@@ -174,37 +170,13 @@ function init()
   -- clocks for the arps
   -- arp options
   arp_option_lights={0,0,0}
-  for i, denominator in ipairs({2,4,6,8,12,16,18,24,32}) do 
-    local arp_beat = 0
+  for i,denominator in ipairs({2,4,6,8,12,16,18,24,32}) do
+    local arp_beat=0
     lattice:new_pattern{
       action=function(t)
         arp_beat=arp_beat+1
-        local num_notes_on = #notes_on
-        local do_play_note = false 
-        if pget("arp_option")==1 then 
-          do_play_note = (num_notes_on==1 and denominator==2) 
-          do_play_note = do_play_note or (num_notes_on==2 and denominator==4) 
-          do_play_note = do_play_note or (num_notes_on==3 and denominator==12) 
-          do_play_note = do_play_note or (num_notes_on>=4 and denominator==16) 
-          -- arp_option_lights[1] = do_play_note and 1 or 0
-        elseif pget("arp_option")==2 then 
-          do_play_note = (num_notes_on==1 and denominator==2) 
-          do_play_note = do_play_note or (num_notes_on==2 and denominator==8) 
-          do_play_note = do_play_note or (num_notes_on==3 and denominator==16) 
-          do_play_note = do_play_note or (num_notes_on>=4 and denominator==24) 
-          -- arp_option_lights[2] = do_play_note and 1 or 0
-        elseif pget("arp_option")==3 then 
-          do_play_note = (num_notes_on==1 and denominator==4) 
-          do_play_note = do_play_note or (num_notes_on==2 and denominator==16) 
-          do_play_note = do_play_note or (num_notes_on==3 and denominator==24) 
-          do_play_note = do_play_note or (num_notes_on>=4 and denominator==32) 
-          -- arp_option_lights[3] = do_play_note and 1 or 0
-        end
-        if do_play_note and num_notes_on > 0 then
-          local x=notes_on[arp_beat%num_notes_on+1]
-          local note=pget("hold_change")==1 and chords[clock_chord].m[x[1]][x[2]] or x[3]
-          note_location_playing={x[1],x[2]}
-          note_play(note)
+        for _,l in ipairs(loopers) do
+          l:clock_arps(arp_beat,denominator)
         end
       end,
       division=1/denominator,
@@ -213,52 +185,6 @@ function init()
 
   lattice:hard_restart()
 
-end
-
-function pget(k) 
-  return params:get(k..params:get("loop"))
-end
-
-function pset(k,v) 
-  return params:set(k..params:get("loop"),v)
-end
-
-function note_play(note)
-  print("[note_play]",note)
-  crow.output[1].volts = (note-24)/12
-
-  -- midi_device['boutique 3']:note_on(note,120,1)
-  -- midi_device['boutique 3']:note_off(note,120,1)
-end
-
-function rec_queue_up(x)
-  print("[debug] rec_queue_up",x)
-  -- don't queue up twice
-  for _,v in ipairs(rec_queue) do
-    if v==x then
-      do return end
-    end
-  end
-  table.insert(rec_queue,x)
-  print("[rec] queued",x)
-end
-
-function rec_queue_down()
-  if rec_current>0 then
-    print("[rec] finished recording",rec_current)
-    loops_recorded[rec_current]=true
-  end
-  if next(rec_queue)==nil then
-    rec_current=0
-    do return end
-  end
-  local x=table.remove(rec_queue,1)
-  engine.record(x,beats_total*clock.get_beat_sec())
-  params:set("loop",x)
-  print("[rec] recording",x)
-  rec_loops=pget("loop_times")
-  rec_loops = rec_loops<3 and rec_loops or 4
-  rec_current=x
 end
 
 function key(k,z)
@@ -322,61 +248,13 @@ function redraw()
   screen.move(25,60)
   screen.text(chords[clock_chord].beats)
 
-  screen.font_size(8)
-  screen.level(15)
-  screen.move(1,6)
-  if rec_current>0 then
-    if next(rec_queue)~=nil then
-      screen.text(string.format("recording %d, then %d",rec_current,rec_queue[1]))
-    else
-      screen.text(string.format("recording %d",rec_current))
-    end
-  elseif next(rec_queue)~=nil then
-    screen.text(string.format("queued %d",rec_queue[1]))
+  for _,l in ipairs(loopers) do
+    l:redraw()
   end
 
   screen.update()
 end
 
 function params_loop()
-  local params_menu={
-    {id="level",name="volume",min=1,max=8,exp=false,div=1,default=6,unit="level",values={-96,-12,-9,-6,-3,0,3,6}},
-    {id="hold_change",name="arp hold",min=1,max=2,exp=false,div=1,default=0,unit="",values={"no","yes"}},
-    {id="arp_option",name="arp speeds",min=1,max=3,exp=false,div=1,default=1,unit="",values={"normal","triplets","fast"}},
-    {id="loop_times",name="loop times",min=1,max=3,exp=false,div=1,default=0,unit="",values={"x1","x2","x4"}},
-  }
-  params:add_number("loop","loop",1,8,1)
-  params:set_action("loop",function(x)
-    for loop=1,8 do
-      for _,pram in ipairs(params_menu) do
-        if loop==x then
-          params:show(pram.id..loop)
-        else
-          params:hide(pram.id..loop)
-        end
-      end
-    end
-    _menu.rebuild_params()
-  end)
-  for loop=1,8 do
-    for _,pram in ipairs(params_menu) do
-      local formatter=pram.formatter
-      if formatter==nil and pram.values~=nil then
-        formatter=function(param)
-          return pram.values[param:get()]..(pram.unit and (" "..pram.unit) or "")
-        end
-      end
-      params:add{
-        type="control",
-        id=pram.id..loop,
-        name=pram.name,
-        controlspec=controlspec.new(pram.min,pram.max,pram.exp and "exp" or "lin",pram.div,pram.default,pram.unit or "",pram.div/(pram.max-pram.min)),
-        formatter=formatter,
-      }
-      params:set_action(pram.id..loop,function(x)
-        -- engine.set_loop(loop,pram.id,x)
-      end)
-    end
-  end
 
 end

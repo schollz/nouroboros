@@ -1,0 +1,221 @@
+local Looper={}
+
+function Looper:new(args)
+  local m=setmetatable({},{__index=Looper})
+  local args=args==nil and {} or args
+  for k,v in pairs(args) do
+    m[k]=v
+  end
+  m:init()
+
+  return m
+end
+
+function Looper:init()
+  if self.id==nil then
+    print("[looper] error: ID not defined")
+    do return end
+  end
+  self.rec_queue={}
+  self.rec_current=0
+  self.rec_loops=0
+  self.loops_recorded={}
+  self.notes_on={}
+  self.note_location_playing=nil
+
+  params:add_group("LOOPER "..self.id,1+3*8)
+  local params_menu={
+    {id="level",name="volume",min=1,max=8,exp=false,div=1,default=6,unit="level",values={-96,-12,-9,-6,-3,0,3,6}},
+    {id="hold_change",name="arp hold",min=1,max=2,exp=false,div=1,default=0,unit="",values={"no","yes"}},
+    {id="arp_option",name="arp speeds",min=1,max=3,exp=false,div=1,default=1,unit="",values={"normal","triplets","fast"}},
+  }
+  params:add_number(self.id.."loop","loop",1,8,1)
+  params:set_action(self.id.."loop",function(x)
+    for loop=1,8 do
+      for _,pram in ipairs(params_menu) do
+        if loop==x then
+          params:show(self.id..pram.id..loop)
+        else
+          params:hide(self.id..pram.id..loop)
+        end
+      end
+    end
+    _menu.rebuild_params()
+  end)
+  for loop=1,8 do
+    for _,pram in ipairs(params_menu) do
+      local formatter=pram.formatter
+      if formatter==nil and pram.values~=nil then
+        formatter=function(param)
+          return pram.values[param:get()]..(pram.unit and (" "..pram.unit) or "")
+        end
+      end
+      local pid=self.id..pram.id..loop
+      params:add{
+        type="control",
+        id=pid,
+        name=pram.name,
+        controlspec=controlspec.new(pram.min,pram.max,pram.exp and "exp" or "lin",pram.div,pram.default,pram.unit or "",pram.div/(pram.max-pram.min)),
+        formatter=formatter,
+      }
+      params:set_action(pid,function(x)
+        -- engine.set_loop(loop,pram.id,x)
+      end)
+    end
+  end
+
+end
+
+function Looper:pget(k)
+  return params:get(self.id..k..params:get(self.id.."loop"))
+end
+
+function Looper:pset(k,v)
+  return params:set(self.id..k..params:get(self.id.."loop"),v)
+end
+
+
+function Looper:clock_loops()
+  if self.rec_loops>0 then
+    self.rec_loops=self.rec_loops-1
+  end
+  if self.rec_loops==0 then
+    self:rec_queue_down()
+  end
+end
+
+function Looper:clock_arps(arp_beat,denominator)
+  local num_notes_on=#self.notes_on
+  if num_notes_on==0 then
+    self.note_location_playing=nil
+    do return end
+  end
+  local do_play_note=false
+  if self:pget("arp_option")==1 then
+    do_play_note=(num_notes_on==1 and denominator==2)
+    do_play_note=do_play_note or (num_notes_on==2 and denominator==4)
+    do_play_note=do_play_note or (num_notes_on==3 and denominator==12)
+    do_play_note=do_play_note or (num_notes_on>=4 and denominator==16)
+    -- arp_option_lights[1] = do_play_note and 1 or 0
+  elseif self:pget("arp_option")==2 then
+    do_play_note=(num_notes_on==1 and denominator==2)
+    do_play_note=do_play_note or (num_notes_on==2 and denominator==8)
+    do_play_note=do_play_note or (num_notes_on==3 and denominator==16)
+    do_play_note=do_play_note or (num_notes_on>=4 and denominator==24)
+    -- arp_option_lights[2] = do_play_note and 1 or 0
+  elseif self:pget("arp_option")==3 then
+    do_play_note=(num_notes_on==1 and denominator==4)
+    do_play_note=do_play_note or (num_notes_on==2 and denominator==16)
+    do_play_note=do_play_note or (num_notes_on==3 and denominator==24)
+    do_play_note=do_play_note or (num_notes_on>=4 and denominator==32)
+    -- arp_option_lights[3] = do_play_note and 1 or 0
+  end
+  if do_play_note and num_notes_on>0 then
+    local x=self.notes_on[arp_beat%num_notes_on+1]
+    local note=self:pget("hold_change")==1 and chords[clock_chord].m[x[1]][x[2]] or x[3]
+    self.note_location_playing={x[1],x[2]}
+    self:note_on(note)
+  end
+end
+
+function Looper:is_note_playing(i,j)
+  if self.note_location_playing==nil then
+    do return end
+  end
+  return self.note_location_playing[1]==i and self.note_location_playing[2]==j
+end
+
+function Looper:is_note_on(i,j)
+  for _,v in ipairs(self.notes_on) do
+    if v[1]==i and v[2]==j then
+      do return true end
+    end
+  end
+  return false
+end
+
+function Looper:note_on(note)
+  print(string.format("[looper %d] note_on %d",self.id,note))
+  crow.output[self.id==1 and 1 or 3].volts=(note-24)/12
+end
+
+function Looper:note_off()
+  print(string.format("[looper %d] note_off",self.id))
+  self.note_location_playing=nil
+  -- crow.output[2](false)
+end
+
+function Looper:note_grid_on(r,c)
+  local note=chords[clock_chord].m[r][c]
+  print(string.format("[looper %d] note_grid_on %d,%d on: %d",self.id,r,c,note))
+  if #self.notes_on==0 then
+    self:note_on(note)
+  end
+  table.insert(self.notes_on,{r,c,note})
+  -- crow.output[2].action=string.format("adsr(%2.3f,0.25,5,0.25)",util.linlin(1,127,0.05,0.5,note))
+  -- crow.output[2](true)
+end
+
+function Looper:note_grid_off(r,c)
+  print(string.format("[looper %d] note_grid_off %d,%d on",self.id,r,c))
+  local j=0
+  for i,v in ipairs(self.notes_on) do
+    if v[1]==r and v[2]==c then
+      j=i
+    end
+  end
+  if j>0 then
+    table.remove(self.notes_on,j)
+  end
+  if next(self.notes_on)==nil then
+    self:note_off()
+  end
+end
+
+function Looper:rec_queue_up(x)
+  print(string.format("[looper %d] rec_queue_up %d"),self.id,x)
+  -- don't queue up twice
+  for _,v in ipairs(self.rec_queue) do
+    if v==x then
+      do return end
+    end
+  end
+  table.insert(self.rec_queue,x)
+  print("[rec] queued",x)
+end
+
+function Looper:rec_queue_down()
+  print(string.format("[looper %d] rec_queue_down",self.id))
+  if self.rec_current>0 then
+    print(string.format("[looper %d] finished %d",self.rec_current))
+    self.loops_recorded[self.rec_current]=true
+  end
+  if next(self.rec_queue)==nil then
+    self.rec_current=0
+    do return end
+  end
+  local x=table.remove(self.rec_queue,1)
+  engine.record(self.id,x,beats_total*clock.get_beat_sec())
+  params:set(self.id.."loop",x)
+  print(string.format("[looper %d] recording %d",self.id,x))
+  self.rec_current=x
+end
+
+function Looper:redraw()
+  screen.font_size(8)
+  screen.level(15)
+  screen.move(1,6)
+
+  if self.rec_current>0 then
+    if next(self.rec_queue)~=nil then
+      screen.text(string.format("recording %d, then %d",self.rec_current,self.rec_queue[1]))
+    else
+      screen.text(string.format("recording %d",self.rec_current))
+    end
+  elseif next(self.rec_queue)~=nil then
+    screen.text(string.format("queued %d",self.rec_queue[1]))
+  end
+end
+
+
+return Looper

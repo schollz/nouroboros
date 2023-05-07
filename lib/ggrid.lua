@@ -39,9 +39,8 @@ function GGrid:new(args)
   end
   m.grid_refresh:start()
 
-  m.blinks = {
-    {v=0,max=15}
-  }
+  m.blinks={
+  {v=0,max=15}}
 
   return m
 end
@@ -68,67 +67,51 @@ function GGrid:key_press(row,col,on)
     self.pressed_buttons[k]=nil
   end
 
-  if row>=2 and row<=7 and col>=2 and col<=7 then
-    -- note space
-    local r = row-1
-    local c = col-1
-    local note=chords[clock_chord].m[r][c]
+  if (row>=3 and row<=8 and col>=1 and col<=6) or (row>=3 and row<=8 and col>=9 and col<=14) then
+    local looper=(row>=3 and row<=8 and col>=1 and col<=6) and 1 or 2
+    local r=row-2
+    local c=col-(looper==1 and 0 or 8)
     if on then
-      if #notes_on==0 then
-        note_play(note)
-      end
-      table.insert(notes_on,{r,c,note})
-      crow.output[2].action=string.format("adsr(%2.3f,0.25,5,0.25)",util.linlin(1,127,0.05,0.5,note))
-      crow.output[2](true)
+      print(string.format("[grid] key_press %d on",looper))
+      loopers[looper]:note_grid_on(r,c)
     else
-      print("note off")
-      local j=0
-      for i,v in ipairs(notes_on) do
-        if v[1]==r and v[2]==c then
-          j=i
-        end
-      end
-      if j>0 then
-        table.remove(notes_on,j)
-      end
-      if next(notes_on)==nil then 
-        crow.output[2](false)
-      end
+      print(string.format("[grid] key_press %d off",looper))
+      loopers[looper]:note_grid_off(r,c)
     end
-  elseif row>=4 and row<=6 and col==8 then 
-    -- arp options
-    if on then 
-      pset("arp_option",row-3)
-    end
-  elseif row==1 and col<=8 then 
-    -- register recording queue
-    if on then 
-      rec_queue_up(col)
-    end
-  elseif row==8 and col<=8 then
-    -- set loop
-    if on then 
-      params:set("loop",col)
-    end
-    -- if not on and time_on<20 then
-    -- end
-  elseif row==7 and col==8 then
-    -- hold changer
-    if on then
-      pset("hold_change",3-pget("hold_change"))
-    end
-  elseif col>=9 then 
-    -- set zeemo
-    -- zeemo:set(col-8,(row-1)/7)
+    -- elseif row>=4 and row<=6 and col==8 then
+    --   -- arp options
+    --   if on then
+    --     pset("arp_option",row-3)
+    --   end
+    -- elseif row==1 and col<=8 then
+    --   -- register recording queue
+    --   if on then
+    --     rec_queue_up(col)
+    --   end
+    -- elseif row==8 and col<=8 then
+    --   -- set loop
+    --   if on then
+    --     params:set("loop",col)
+    --   end
+    --   -- if not on and time_on<20 then
+    --   -- end
+    -- elseif row==7 and col==8 then
+    --   -- hold changer
+    --   if on then
+    --     pset("hold_change",3-pget("hold_change"))
+    --   end
+    -- elseif col>=9 then
+    --   -- set zeemo
+    --   -- zeemo:set(col-8,(row-1)/7)
   end
 end
 
 function GGrid:get_visual()
   -- do blinking
-  for i,v in ipairs(self.blinks) do 
-    self.blinks[i].v = self.blinks[i].v + 1
-    if self.blinks[i].v > self.blinks[i].max then 
-      self.blinks[i].v = 0
+  for i,v in ipairs(self.blinks) do
+    self.blinks[i].v=self.blinks[i].v+1
+    if self.blinks[i].v>self.blinks[i].max then
+      self.blinks[i].v=0
     end
   end
 
@@ -142,30 +125,30 @@ function GGrid:get_visual()
     end
   end
 
-  -- illuminate loops in recording queu
-  for i,loop in ipairs(rec_queue) do
-    self.visual[1][loop]=5
-  end
+  -- -- illuminate loops in recording queu
+  -- for i,loop in ipairs(rec_queue) do
+  --   self.visual[1][loop]=5
+  -- end
 
-  -- illuminate currently recording loop
-  if rec_current>0 then 
-    self.visual[1][rec_current] = 15
-  end
+  -- -- illuminate currently recording loop
+  -- if rec_current>0 then
+  --   self.visual[1][rec_current]=15
+  -- end
 
-  -- illuminate loops that have data
-  for loop,_ in pairs(loops_recorded) do 
-    self.visual[8][loop]=5
-  end
+  -- -- illuminate loops that have data
+  -- for loop,_ in pairs(loops_recorded) do
+  --   self.visual[8][loop]=5
+  -- end
 
-  -- illuminate current loop
-  self.visual[8][params:get("loop")]=15
+  -- -- illuminate current loop
+  -- self.visual[8][params:get("loop")]=15
 
-  -- illuminate the arp option lights
-  for i,v in ipairs(arp_option_lights) do 
-    self.visual[i+3][8] = v*10 + (pget("arp_option")==i and 5 or 0)
-  end
-  -- illuminate the hold change
-  self.visual[7][8] = pget("hold_change")*10
+  -- -- illuminate the arp option lights
+  -- for i,v in ipairs(arp_option_lights) do
+  --   self.visual[i+3][8]=v*10+(pget("arp_option")==i and 5 or 0)
+  -- end
+  -- -- illuminate the hold change
+  -- self.visual[7][8]=pget("hold_change")*10
 
 
   -- illuminate currently pressed button
@@ -182,23 +165,32 @@ function GGrid:get_visual()
   end
 
   -- -- illuminate zeemo
-  -- for col=9,16 do 
+  -- for col=9,16 do
   --   local rowmin=util.round((1-zeemo:get(col-8))*7)+1
-  --   for row=rowmin,8 do 
+  --   for row=rowmin,8 do
   --     self.visual[row][col] = 7
   --   end
   -- end
 
   -- illuminate the notes
   -- (special)
-  for i=1,6 do 
-    for j=1,6 do 
-      local row=i+1
-      local col=j+1
-      if note_location_playing~=nil and note_location_playing[1]==i and note_location_playing[2]==j then
-        self.visual[row][col]=15
-      else
-        self.visual[row][col]=loop_db[params:get("loop")]
+  for loop=1,2 do
+    for i=1,6 do
+      for j=1,6 do
+        local row=i+2
+        local col=j+(loop==1 and 0 or 8)
+        self.visual[row][col]=2
+        if loopers[loop]:is_note_playing(i,j) then
+          self.visual[row][col]=self.visual[row][col]+10
+        end
+        if loopers[loop]:is_note_on(i,j) then
+          self.visual[row][col]=self.visual[row][col]+3
+        end
+        -- if note_location_playing~=nil and note_location_playing[1]==i and note_location_playing[2]==j then
+        --   self.visual[row][col]=15
+        -- else
+        --   self.visual[row][col]=loop_db[params:get("loop")]
+        -- end
       end
     end
   end

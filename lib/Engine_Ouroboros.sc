@@ -49,7 +49,7 @@ Engine_Ouroboros : CroneEngine {
 			var sndReverb=In.ar(busReverb,2);
 			var sndCompress=In.ar(busCompress,2);
 			var sndNoCompress=In.ar(busNoCompress,2);
-			var in = SoundIn.ar([0,1]);
+			var in = (SoundIn.ar(0)*\amp2.kr(1)) + (SoundIn.ar(1)*\amp2.kr(1));
 			sndNoCompress = (sndNoCompress+(in*0.8));
 			sndReverb = (sndReverb+(in*0.2));
 			sndCompress=Compander.ar(sndCompress,sndCompress,0.05,slopeAbove:0.1,relaxTime:0.01);
