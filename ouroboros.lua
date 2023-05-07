@@ -10,7 +10,6 @@
 
 utils=include("lib/utils")
 grid_=include("lib/ggrid")
-zeemo_=include("lib/zeemo")
 lattice_=require("lattice")
 musicutil=require("musicutil")
 engine.name="Ouroboros"
@@ -54,6 +53,7 @@ reverb_settings={
   rev_mid_time=6,
 }
 function init()
+  crow.output[2].action="adsr(1,1,5,1)"
   params:set("clock_tempo",bpm)
 
   print("starting")
@@ -91,11 +91,7 @@ function init()
     end
   end
 
-  -- setup zeemo
-  zeemo=zeemo_:new()
-
   params_loop()
-
 
   params:default()
   params:bang()
@@ -226,7 +222,7 @@ end
 function note_play(note)
   print("[note_play]",note)
   crow.output[1].volts = (note-24)/12
-  
+
   -- midi_device['boutique 3']:note_on(note,120,1)
   -- midi_device['boutique 3']:note_off(note,120,1)
 end

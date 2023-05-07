@@ -78,6 +78,8 @@ function GGrid:key_press(row,col,on)
         note_play(note)
       end
       table.insert(notes_on,{r,c,note})
+      crow.output[2].action=string.format("adsr(%2.3f,0.25,5,0.25)",util.linlin(1,127,0.25,1,note))
+      crow.output[2](true)
     else
       print("note off")
       local j=0
@@ -88,6 +90,9 @@ function GGrid:key_press(row,col,on)
       end
       if j>0 then
         table.remove(notes_on,j)
+      end
+      if next(notes_on)==nil then 
+        crow.output[2](false)
       end
     end
   elseif row>=4 and row<=6 and col==8 then 
@@ -114,7 +119,7 @@ function GGrid:key_press(row,col,on)
     end
   elseif col>=9 then 
     -- set zeemo
-    zeemo:set(col-8,(row-1)/7)
+    -- zeemo:set(col-8,(row-1)/7)
   end
 end
 
@@ -176,13 +181,13 @@ function GGrid:get_visual()
     self.visual[row][col]=15
   end
 
-  -- illuminate zeemo
-  for col=9,16 do 
-    local rowmin=util.round((1-zeemo:get(col-8))*7)+1
-    for row=rowmin,8 do 
-      self.visual[row][col] = 7
-    end
-  end
+  -- -- illuminate zeemo
+  -- for col=9,16 do 
+  --   local rowmin=util.round((1-zeemo:get(col-8))*7)+1
+  --   for row=rowmin,8 do 
+  --     self.visual[row][col] = 7
+  --   end
+  -- end
 
   -- illuminate the notes
   -- (special)
