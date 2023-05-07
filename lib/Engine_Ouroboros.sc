@@ -64,27 +64,29 @@ Engine_Ouroboros : CroneEngine {
 			arg id,buf,t_trig=0,busReverb,busCompress,busNoCompress,db=0,done=0;
             var amp = db.dbamp;
             var playhead = ToggleFF.kr(t_trig);
-			var snd0 = PlayBuf.ar(2,buf,rate:BufRateScale.ir(buf),loop:1,trigger:1-playhead);
-			var snd1 = PlayBuf.ar(2,buf,rate:BufRateScale.ir(buf),loop:1,trigger:playhead);
+			var snd0 = PlayBuf.ar(1,buf,rate:BufRateScale.ir(buf),loop:1,trigger:1-playhead);
+			var snd1 = PlayBuf.ar(1,buf,rate:BufRateScale.ir(buf),loop:1,trigger:playhead);
 			var snd = SelectX.ar(Lag.kr(playhead,xfade),[snd0,snd1]);
             var reverbSend = 0.25;
 			snd = snd * amp * EnvGen.ar(Env.adsr(3,1,1,3),1-done,doneAction:2);
+			snd = snd * (LFNoise2.kr(1/Rand(4,6)).range(6.neg,6).dbamp); // amplitude lfo
+			snd = Pan2.ar(snd,LFNoise2.kr(1/Rand(3,8),mul:0.25)); 
 			Out.ar(busCompress,0*snd);
 			Out.ar(busNoCompress,(1-reverbSend)*snd);
 			Out.ar(busReverb,reverbSend*snd);
 		}).add;
 
 		SynthDef("recorder",{
-			arg id,buf,t_trig,busReverb,busCompress,busNoCompress,db=0,done=0;
+			arg id,buf,t_trig,busReverb,busCompress,busNoCompress,db=0,done=0,side=0;
             var amp = db.dbamp;
-            var snd = SoundIn.ar([0,1]);
+            var snd = SoundIn.ar(side);
             RecordBuf.ar(snd,buf,loop:0,doneAction:2);
 			Out.ar(0,Silent.ar(2));
 		}).add;
 
 		SynthDef("track_input",{
-			arg id,buf,t_trig,busReverb,busCompress,busNoCompress,db=0,done=0;
-            var snd = SoundIn.ar([0,1]);
+			arg id,buf,t_trig,busReverb,busCompress,busNoCompress,db=0,done=0,side=0;
+            var snd = SoundIn.ar(side);
 			SendReply.kr(Impulse.kr(10),"/loop_db",[id,Lag.kr(Amplitude.kr(snd),0.5)]);
 			Out.ar(0,Silent.ar(2));
 		}).add;
@@ -119,7 +121,7 @@ Engine_Ouroboros : CroneEngine {
             busNoCompress: buses.at("busNoCompress"),
             busCompress: buses.at("busCompress"),
         ]));
-		syns.put("track_input",Synth.head(server,"track_input"));
+		// syns.put("track_input",Synth.head(server,"track_input"));
 
 		server.sync;
 		"done loading.".postln;
@@ -132,9 +134,10 @@ Engine_Ouroboros : CroneEngine {
             });
         });
 
-		this.addCommand("record","if",{ arg msg;
+		this.addCommand("record","ifi",{ arg msg;
             var id=msg[1];
             var seconds=msg[2].asFloat+(xfade*1.5);
+			var side=msg[3];
 
             // initiate a routine to automatically start playing loop
             Routine {
@@ -153,12 +156,13 @@ Engine_Ouroboros : CroneEngine {
             }.play;
 
             // allocate buffer and record the loop
-            Buffer.alloc(server,seconds*server.sampleRate,2,completionMessage:{ arg buf;
+            Buffer.alloc(server,seconds*server.sampleRate,1,completionMessage:{ arg buf;
                 bufs.put(id,buf);
 				["[ouro] started recording loop",id].postln;
                 syns.put("record"++id,Synth.head(server,"recorder",[
                     id: id,
                     buf: buf,
+					side: side,
                 ]).onFree({
                     ["[ouro] finished recording loop",id].postln;
                 }));

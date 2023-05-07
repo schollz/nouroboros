@@ -174,7 +174,7 @@ function init()
     local arp_beat=0
     lattice:new_pattern{
       action=function(t)
-        arp_beat=arp_beat+1
+      arp_beat=arp_beat+1
         for _,l in ipairs(loopers) do
           l:clock_arps(arp_beat,denominator)
         end

@@ -23,12 +23,10 @@ function Looper:init()
   self.notes_on={}
   self.note_location_playing=nil
 
-  params:add_group("LOOPER "..self.id,1+3*8)
   local params_menu={
-    {id="level",name="volume",min=1,max=8,exp=false,div=1,default=6,unit="level",values={-96,-12,-9,-6,-3,0,3,6}},
-    {id="hold_change",name="arp hold",min=1,max=2,exp=false,div=1,default=0,unit="",values={"no","yes"}},
-    {id="arp_option",name="arp speeds",min=1,max=3,exp=false,div=1,default=1,unit="",values={"normal","triplets","fast"}},
+    {id="db",name="volume",min=1,max=8,exp=false,div=1,default=6,unit="level",values={-96,-12,-9,-6,-3,0,3,6}},
   }
+  params:add_group("LOOPER "..self.id,1+#params_menu*8)
   params:add_number(self.id.."loop","loop",1,8,1)
   params:set_action(self.id.."loop",function(x)
     for loop=1,8 do
@@ -42,6 +40,9 @@ function Looper:init()
     end
     _menu.rebuild_params()
   end)
+  params:add_option(self.id.."hold_change","static holds",{"no","yes"},1)
+  params:add_option(self.id.."note_pressing","note pressing",{"press","toggle"},1)
+  params:add_option(self.id.."arp_option","arp speeds",{"normal","triplets","fast"},1)
   for loop=1,8 do
     for _,pram in ipairs(params_menu) do
       local formatter=pram.formatter
@@ -59,7 +60,10 @@ function Looper:init()
         formatter=formatter,
       }
       params:set_action(pid,function(x)
-        -- engine.set_loop(loop,pram.id,x)
+        if pram.values~=nil then 
+          x=pram.values[x]
+        end
+        engine.set_loop(loop + (self.id==1 and 0 or 8),pram_id,x)
       end)
     end
   end
@@ -91,19 +95,19 @@ function Looper:clock_arps(arp_beat,denominator)
     do return end
   end
   local do_play_note=false
-  if self:pget("arp_option")==1 then
+  if params:get(self.id.."arp_option")==1 then
     do_play_note=(num_notes_on==1 and denominator==2)
     do_play_note=do_play_note or (num_notes_on==2 and denominator==4)
     do_play_note=do_play_note or (num_notes_on==3 and denominator==12)
     do_play_note=do_play_note or (num_notes_on>=4 and denominator==16)
     -- arp_option_lights[1] = do_play_note and 1 or 0
-  elseif self:pget("arp_option")==2 then
+  elseif params:get(self.id.."arp_option")==2 then
     do_play_note=(num_notes_on==1 and denominator==2)
     do_play_note=do_play_note or (num_notes_on==2 and denominator==8)
     do_play_note=do_play_note or (num_notes_on==3 and denominator==16)
     do_play_note=do_play_note or (num_notes_on>=4 and denominator==24)
     -- arp_option_lights[2] = do_play_note and 1 or 0
-  elseif self:pget("arp_option")==3 then
+  elseif params:get(self.id.."arp_option")==3 then
     do_play_note=(num_notes_on==1 and denominator==4)
     do_play_note=do_play_note or (num_notes_on==2 and denominator==16)
     do_play_note=do_play_note or (num_notes_on==3 and denominator==24)
@@ -112,7 +116,7 @@ function Looper:clock_arps(arp_beat,denominator)
   end
   if do_play_note and num_notes_on>0 then
     local x=self.notes_on[arp_beat%num_notes_on+1]
-    local note=self:pget("hold_change")==1 and chords[clock_chord].m[x[1]][x[2]] or x[3]
+    local note=params:get(self.id.."hold_change")==1 and chords[clock_chord].m[x[1]][x[2]] or x[3]
     self.note_location_playing={x[1],x[2]}
     self:note_on(note)
   end
@@ -184,6 +188,19 @@ function Looper:rec_queue_up(x)
   print("[rec] queued",x)
 end
 
+function Looper:is_in_rec_queue(i)
+  for _, v in ipairs(self.rec_queue) do 
+    if v==i then 
+      do return true end 
+    end
+  end
+  do return false
+end
+
+function Looper:is_recorded(i)
+  return self.loops_recorded[i]
+end
+
 function Looper:rec_queue_down()
   print(string.format("[looper %d] rec_queue_down",self.id))
   if self.rec_current>0 then
@@ -195,7 +212,7 @@ function Looper:rec_queue_down()
     do return end
   end
   local x=table.remove(self.rec_queue,1)
-  engine.record(self.id,x,beats_total*clock.get_beat_sec())
+  engine.record(self.id+(self.id==1 and 0 or 8),x,beats_total*clock.get_beat_sec(),self.id==1 and 0 or 1)
   params:set(self.id.."loop",x)
   print(string.format("[looper %d] recording %d",self.id,x))
   self.rec_current=x

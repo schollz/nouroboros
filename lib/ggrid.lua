@@ -51,10 +51,11 @@ function GGrid:grid_key(x,y,z)
 end
 
 function GGrid:key_held_action(row,col)
-  -- if col==16 then
-  --   -- enqueue recording
-  --   rec_queue_up(row)
-  -- end
+  if col==8 or col==16 then 
+    -- enqueue recording
+    local l = col==8 and 1 or 2
+    loopers[l]:rec_queue_up(col)
+  end
 end
 
 function GGrid:key_press(row,col,on)
@@ -71,38 +72,26 @@ function GGrid:key_press(row,col,on)
     local looper=(row>=3 and row<=8 and col>=1 and col<=6) and 1 or 2
     local r=row-2
     local c=col-(looper==1 and 0 or 8)
-    if on then
-      print(string.format("[grid] key_press %d on",looper))
-      loopers[looper]:note_grid_on(r,c)
+    if loopers[looper]:pget("note_pressing")==1 then 
+      -- hold notes to play them
+      if on then
+        print(string.format("[grid] key_press %d on (hold)",looper))
+        loopers[looper]:note_grid_on(r,c)
+      else
+        print(string.format("[grid] key_press %d off (hold)",looper))
+        loopers[looper]:note_grid_off(r,c)
+      end  
     else
-      print(string.format("[grid] key_press %d off",looper))
-      loopers[looper]:note_grid_off(r,c)
+      -- toggle notes on off
+      if on then
+        print(string.format("[grid] key_press %d on (toggle)",looper))
+        if loopers[looper]:is_note_on(r,c) then 
+          loopers[looper]:note_grid_off(r,c)
+        else
+          loopers[looper]:note_grid_on(r,c)
+        end
+      end  
     end
-    -- elseif row>=4 and row<=6 and col==8 then
-    --   -- arp options
-    --   if on then
-    --     pset("arp_option",row-3)
-    --   end
-    -- elseif row==1 and col<=8 then
-    --   -- register recording queue
-    --   if on then
-    --     rec_queue_up(col)
-    --   end
-    -- elseif row==8 and col<=8 then
-    --   -- set loop
-    --   if on then
-    --     params:set("loop",col)
-    --   end
-    --   -- if not on and time_on<20 then
-    --   -- end
-    -- elseif row==7 and col==8 then
-    --   -- hold changer
-    --   if on then
-    --     pset("hold_change",3-pget("hold_change"))
-    --   end
-    -- elseif col>=9 then
-    --   -- set zeemo
-    --   -- zeemo:set(col-8,(row-1)/7)
   end
 end
 
@@ -125,30 +114,28 @@ function GGrid:get_visual()
     end
   end
 
-  -- -- illuminate loops in recording queu
-  -- for i,loop in ipairs(rec_queue) do
-  --   self.visual[1][loop]=5
-  -- end
+  -- illuminate rec queue / is recorded / current loop
+  for l=1,2 do 
+    for i=1,8 do 
+      if loops[l]:is_in_rec_queue(i) then 
+        self.visual[i][l==1 and 8 or 16] = 10
+      elseif loops[l]:is_recorded(i) then 
+        self.visual[i][l==1 and 8 or 16] = 2
+      end
+      if params:get(l.."loop")==i then 
+        self.visual[i][l==1 and 8 or 16] = self.visual[i][l==1 and 8 or 16]+ 5
+      end
+    end
+  end
 
-  -- -- illuminate currently recording loop
-  -- if rec_current>0 then
-  --   self.visual[1][rec_current]=15
-  -- end
-
-  -- -- illuminate loops that have data
-  -- for loop,_ in pairs(loops_recorded) do
-  --   self.visual[8][loop]=5
-  -- end
-
-  -- -- illuminate current loop
-  -- self.visual[8][params:get("loop")]=15
-
-  -- -- illuminate the arp option lights
-  -- for i,v in ipairs(arp_option_lights) do
-  --   self.visual[i+3][8]=v*10+(pget("arp_option")==i and 5 or 0)
-  -- end
-  -- -- illuminate the hold change
-  -- self.visual[7][8]=pget("hold_change")*10
+  -- illuminate level
+  for looper=1,2 do 
+    local v=loopers[looper]:pget("db")
+    local col=looper==1 and 8 or 16
+    for row=9-v,1,-1 do 
+      self.visual[row][col]=15
+    end
+  end
 
 
   -- illuminate currently pressed button
@@ -164,33 +151,20 @@ function GGrid:get_visual()
     self.visual[row][col]=15
   end
 
-  -- -- illuminate zeemo
-  -- for col=9,16 do
-  --   local rowmin=util.round((1-zeemo:get(col-8))*7)+1
-  --   for row=rowmin,8 do
-  --     self.visual[row][col] = 7
-  --   end
-  -- end
-
   -- illuminate the notes
   -- (special)
-  for loop=1,2 do
+  for looper=1,2 do
     for i=1,6 do
       for j=1,6 do
         local row=i+2
-        local col=j+(loop==1 and 0 or 8)
+        local col=j+(looper==1 and 0 or 8)
         self.visual[row][col]=2
-        if loopers[loop]:is_note_playing(i,j) then
+        if loopers[looper]:is_note_playing(i,j) then
           self.visual[row][col]=self.visual[row][col]+10
         end
-        if loopers[loop]:is_note_on(i,j) then
+        if loopers[looper]:is_note_on(i,j) then
           self.visual[row][col]=self.visual[row][col]+3
         end
-        -- if note_location_playing~=nil and note_location_playing[1]==i and note_location_playing[2]==j then
-        --   self.visual[row][col]=15
-        -- else
-        --   self.visual[row][col]=loop_db[params:get("loop")]
-        -- end
       end
     end
   end
