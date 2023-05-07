@@ -51,9 +51,9 @@ function GGrid:grid_key(x,y,z)
 end
 
 function GGrid:key_held_action(row,col)
-  if col==8 or col==16 then 
+  if col==8 or col==16 then
     -- enqueue recording
-    local l = col==8 and 1 or 2
+    local l=col==8 and 1 or 2
     loopers[l]:rec_queue_up(col)
   end
 end
@@ -72,7 +72,7 @@ function GGrid:key_press(row,col,on)
     local looper=(row>=3 and row<=8 and col>=1 and col<=6) and 1 or 2
     local r=row-2
     local c=col-(looper==1 and 0 or 8)
-    if loopers[looper]:pget("note_pressing")==1 then 
+    if loopers[looper]:pget("note_pressing")==1 then
       -- hold notes to play them
       if on then
         print(string.format("[grid] key_press %d on (hold)",looper))
@@ -80,17 +80,17 @@ function GGrid:key_press(row,col,on)
       else
         print(string.format("[grid] key_press %d off (hold)",looper))
         loopers[looper]:note_grid_off(r,c)
-      end  
+      end
     else
       -- toggle notes on off
       if on then
         print(string.format("[grid] key_press %d on (toggle)",looper))
-        if loopers[looper]:is_note_on(r,c) then 
+        if loopers[looper]:is_note_on(r,c) then
           loopers[looper]:note_grid_off(r,c)
         else
           loopers[looper]:note_grid_on(r,c)
         end
-      end  
+      end
     end
   end
 end
@@ -115,24 +115,24 @@ function GGrid:get_visual()
   end
 
   -- illuminate rec queue / is recorded / current loop
-  for l=1,2 do 
-    for i=1,8 do 
-      if loops[l]:is_in_rec_queue(i) then 
-        self.visual[i][l==1 and 8 or 16] = 10
-      elseif loops[l]:is_recorded(i) then 
-        self.visual[i][l==1 and 8 or 16] = 2
+  for l=1,2 do
+    for i=1,8 do
+      if loopers[l]:is_in_rec_queue(i) then
+        self.visual[i][l==1 and 8 or 16]=10
+      elseif loopers[l]:is_recorded(i) then
+        self.visual[i][l==1 and 8 or 16]=2
       end
-      if params:get(l.."loop")==i then 
-        self.visual[i][l==1 and 8 or 16] = self.visual[i][l==1 and 8 or 16]+ 5
+      if params:get(l.."loop")==i then
+        self.visual[i][l==1 and 8 or 16]=self.visual[i][l==1 and 8 or 16]+5
       end
     end
   end
 
   -- illuminate level
-  for looper=1,2 do 
+  for looper=1,2 do
     local v=loopers[looper]:pget("db")
     local col=looper==1 and 8 or 16
-    for row=9-v,1,-1 do 
+    for row=v,1,-1 do
       self.visual[row][col]=15
     end
   end

@@ -60,10 +60,10 @@ function Looper:init()
         formatter=formatter,
       }
       params:set_action(pid,function(x)
-        if pram.values~=nil then 
+        if pram.values~=nil then
           x=pram.values[x]
         end
-        engine.set_loop(loop + (self.id==1 and 0 or 8),pram_id,x)
+        engine.set_loop(loop+(self.id==1 and 0 or 8),pram.id,x)
       end)
     end
   end
@@ -189,12 +189,12 @@ function Looper:rec_queue_up(x)
 end
 
 function Looper:is_in_rec_queue(i)
-  for _, v in ipairs(self.rec_queue) do 
-    if v==i then 
-      do return true end 
+  for _,v in ipairs(self.rec_queue) do
+    if v==i then
+      do return true end
     end
   end
-  do return false
+  do return false end
 end
 
 function Looper:is_recorded(i)
@@ -236,3 +236,5 @@ end
 
 
 return Looper
+
+
