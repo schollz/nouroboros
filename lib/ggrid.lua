@@ -93,7 +93,7 @@ function GGrid:key_press(row,col,on)
   elseif row>=4 and row<=6 and col==8 then 
     -- arp options
     if on then 
-      pset("arp_option",row-1)
+      pset("arp_option",row-3)
     end
   elseif row==1 and col<=8 then 
     -- register recording queue

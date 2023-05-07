@@ -179,22 +179,23 @@ function init()
         if pget("arp_option")==1 then 
           do_play_note = (num_notes_on==1 and denominator==2) 
           do_play_note = do_play_note or (num_notes_on==2 and denominator==4) 
-          do_play_note = do_play_note or (num_notes_on==3 and denominator==6) 
-          do_play_note = do_play_note or (num_notes_on>=4 and denominator==8) 
-          arp_option_lights[1] = do_play_note and 1 or 0
-        elseif pget("arp_option")==2 then 
-          do_play_note = (num_notes_on<=2 and denominator==6) 
-          do_play_note = do_play_note or (num_notes_on==3 or num_notes_on==4 and denominator==12) 
-          do_play_note = do_play_note or (num_notes_on>4 and denominator==18) 
-          arp_option_lights[2] = do_play_note and 1 or 0
-        elseif pget("arp_option")==3 then 
-          do_play_note = (num_notes_on==1 and denominator==4) 
-          do_play_note = do_play_note or (num_notes_on==2 and denominator==8) 
           do_play_note = do_play_note or (num_notes_on==3 and denominator==12) 
           do_play_note = do_play_note or (num_notes_on>=4 and denominator==16) 
-          arp_option_lights[3] = do_play_note and 1 or 0
+          -- arp_option_lights[1] = do_play_note and 1 or 0
+        elseif pget("arp_option")==2 then 
+          do_play_note = (num_notes_on==1 and denominator==2) 
+          do_play_note = do_play_note or (num_notes_on==2 and denominator==8) 
+          do_play_note = do_play_note or (num_notes_on==3 and denominator==16) 
+          do_play_note = do_play_note or (num_notes_on>=4 and denominator==24) 
+          -- arp_option_lights[2] = do_play_note and 1 or 0
+        elseif pget("arp_option")==3 then 
+          do_play_note = (num_notes_on==1 and denominator==4) 
+          do_play_note = do_play_note or (num_notes_on==2 and denominator==16) 
+          do_play_note = do_play_note or (num_notes_on==3 and denominator==24) 
+          do_play_note = do_play_note or (num_notes_on>=4 and denominator==32) 
+          -- arp_option_lights[3] = do_play_note and 1 or 0
         end
-        if do_play_note then
+        if do_play_note and num_notes_on > 0 then
           local x=notes_on[arp_beat%num_notes_on+1]
           local note=pget("hold_change")==1 and chords[clock_chord].m[x[1]][x[2]] or x[3]
           note_location_playing={x[1],x[2]}
@@ -219,8 +220,10 @@ end
 
 function note_play(note)
   print("[note_play]",note)
-  midi_device['boutique 3']:note_on(note,120,1)
-  midi_device['boutique 3']:note_off(note,120,1)
+  crow.output[1].volts = (note-24)/12
+  
+  -- midi_device['boutique 3']:note_on(note,120,1)
+  -- midi_device['boutique 3']:note_off(note,120,1)
 end
 
 function rec_queue_up(x)
