@@ -51,10 +51,10 @@ function GGrid:grid_key(x,y,z)
 end
 
 function GGrid:key_held_action(row,col)
-  if col==8 or col==16 then
+  if col==7 or col==15 then
     -- enqueue recording
-    local l=col==8 and 1 or 2
-    loopers[l]:rec_queue_up(col)
+    local l=col==7 and 1 or 2
+    loopers[l]:rec_queue_up(row)
   end
 end
 
@@ -69,28 +69,49 @@ function GGrid:key_press(row,col,on)
   end
 
   if (row>=3 and row<=8 and col>=1 and col<=6) or (row>=3 and row<=8 and col>=9 and col<=14) then
-    local looper=(row>=3 and row<=8 and col>=1 and col<=6) and 1 or 2
+    local l=col<9 and 1 or 2
     local r=row-2
-    local c=col-(looper==1 and 0 or 8)
-    if loopers[looper]:pget("note_pressing")==1 then
+    local c=col-(l==1 and 0 or 8)
+    if params:get(l.."note_pressing")==1 then
       -- hold notes to play them
       if on then
-        print(string.format("[grid] key_press %d on (hold)",looper))
-        loopers[looper]:note_grid_on(r,c)
+        print(string.format("[grid] key_press %d on (hold)",l))
+        loopers[l]:note_grid_on(r,c)
+        loopers[l]:button_down(r,c)
       else
-        print(string.format("[grid] key_press %d off (hold)",looper))
-        loopers[looper]:note_grid_off(r,c)
+        print(string.format("[grid] key_press %d off (hold)",l))
+        loopers[l]:note_grid_off(r,c)
+        loopers[l]:button_up(r,c)
       end
     else
       -- toggle notes on off
       if on then
-        print(string.format("[grid] key_press %d on (toggle)",looper))
-        if loopers[looper]:is_note_on(r,c) then
-          loopers[looper]:note_grid_off(r,c)
+        print(string.format("[grid] key_press %d on (toggle)",l))
+        if loopers[l]:is_note_on(r,c) then
+          loopers[l]:note_grid_off(r,c)
         else
-          loopers[looper]:note_grid_on(r,c)
+          loopers[l]:note_grid_on(r,c)
         end
+        loopers[l]:button_down(r,c)
+      else
+        loopers[l]:button_up(r,c)
       end
+    end
+  elseif (col==7 or col==15) then
+    local l=col<9 and 1 or 2
+    params:set(l.."loop",row)
+  elseif (col==8 or col==16) then
+    local l=col<9 and 1 or 2
+    loopers[l]:pset("db",9-row)
+  elseif row==2 then
+    if on then
+      local l=col<9 and 1 or 2
+      params:set(l.."arp_option",col<7 and col or (col-8))
+    end
+  elseif row==1 and (col==1 or col==9) then
+    if on then
+      local l=col<9 and 1 or 2
+      params:set(l.."note_pressing",3-params:get(l.."note_pressing"))
     end
   end
 end
@@ -117,24 +138,37 @@ function GGrid:get_visual()
   -- illuminate rec queue / is recorded / current loop
   for l=1,2 do
     for i=1,8 do
+      self.visual[i][l==1 and 7 or 15]=4
       if loopers[l]:is_in_rec_queue(i) then
-        self.visual[i][l==1 and 8 or 16]=10
+        self.visual[i][l==1 and 7 or 15]=10
       elseif loopers[l]:is_recorded(i) then
-        self.visual[i][l==1 and 8 or 16]=2
+        self.visual[i][l==1 and 7 or 15]=1
       end
       if params:get(l.."loop")==i then
-        self.visual[i][l==1 and 8 or 16]=self.visual[i][l==1 and 8 or 16]+5
+        self.visual[i][l==1 and 7 or 15]=self.visual[i][l==1 and 7 or 15]+5
       end
     end
   end
 
   -- illuminate level
   for looper=1,2 do
-    local v=loopers[looper]:pget("db")
+    local v=9-loopers[looper]:pget("db")
     local col=looper==1 and 8 or 16
-    for row=v,1,-1 do
-      self.visual[row][col]=15
+    for row=1,8 do
+      self.visual[row][col]=v<=row and 4 or 2
     end
+  end
+
+  -- illuminate the arp speeds
+  for l=1,2 do
+    for i=1,6 do
+      self.visual[2][i+(l==1 and 0 or 8)]=params:get(l.."arp_option")==i and 4 or 2
+    end
+  end
+
+  -- illuminate toggle
+  for l=1,2 do
+    self.visual[1][l==1 and 1 or 9]=params:get(l.."note_pressing")==1 and 3 or 10
   end
 
 
@@ -148,8 +182,12 @@ function GGrid:get_visual()
       print("[ggrid] holding ",row,col,"for >1 second")
       self:key_held_action(row,col)
     end
-    self.visual[row][col]=15
+    -- if col==7 or col==15 then
+    -- else
+    --   self.visual[row][col]=15
+    -- end
   end
+
 
   -- illuminate the notes
   -- (special)
@@ -158,18 +196,18 @@ function GGrid:get_visual()
       for j=1,6 do
         local row=i+2
         local col=j+(looper==1 and 0 or 8)
-        self.visual[row][col]=2
+        self.visual[row][col]=1
         if loopers[looper]:is_note_playing(i,j) then
-          self.visual[row][col]=self.visual[row][col]+10
+          self.visual[row][col]=self.visual[row][col]+7
         end
         if loopers[looper]:is_note_on(i,j) then
-          self.visual[row][col]=self.visual[row][col]+3
+          self.visual[row][col]=self.visual[row][col]+6
         end
+
+
       end
     end
   end
-
-
 
   return self.visual
 end

@@ -137,7 +137,7 @@ Engine_Ouroboros : CroneEngine {
 		this.addCommand("record","ifi",{ arg msg;
             var id=msg[1];
             var seconds=msg[2].asFloat+(xfade*1.5);
-			var side=msg[3];
+			var side=1-msg[3];
 
             // initiate a routine to automatically start playing loop
             Routine {
@@ -175,8 +175,14 @@ Engine_Ouroboros : CroneEngine {
             var v=msg[3];
             if (syns.at(id).notNil,{
                 if (syns.at(id).isRunning,{
-                    ["[ouro] setting loop",id,k,"=",v].postln;
+                    ["[ouro] setting syn",id,k,"=",v].postln;
                     syns.at(id).set(k,v);
+                });
+            });
+            if (loops.at(id).notNil,{
+                if (loops.at(id).isRunning,{
+                    ["[ouro] setting loop",id,k,"=",v].postln;
+                    loops.at(id).set(k,v);
                 });
             });
 		});

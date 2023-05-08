@@ -18,16 +18,16 @@ engine.name="Ouroboros"
 --
 -- SONG SPECIFIC
 --
-bpm=90
+bpm=150
 chords={
   {chord="I",chord2="ii",beats=4},
   {chord="V","vi",beats=2},
   {chord="vi","vii",beats=4},
   {chord="iii","I",beats=4},
-  {chord="IV",chord2="ii",beats=4},
-  {chord="V","vi",beats=4},
-  {chord="vi","vii",beats=4},
-  {chord="I","I",beats=4},
+  -- {chord="IV",chord2="ii",beats=4},
+  -- {chord="V","vi",beats=4},
+  -- {chord="vi","vii",beats=4},
+  -- {chord="I","I",beats=4},
 }
 --
 -- THANKS
@@ -174,7 +174,7 @@ function init()
     local arp_beat=0
     lattice:new_pattern{
       action=function(t)
-      arp_beat=arp_beat+1
+        arp_beat=arp_beat+1
         for _,l in ipairs(loopers) do
           l:clock_arps(arp_beat,denominator)
         end

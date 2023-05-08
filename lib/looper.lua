@@ -22,6 +22,14 @@ function Looper:init()
   self.loops_recorded={}
   self.notes_on={}
   self.note_location_playing=nil
+  self.arp_options={4,8,12,16,24,32}
+  self.buttons={}
+  for i=1,6 do
+    table.insert(self.buttons,{})
+    for j=1,6 do
+      table.insert(self.buttons[i],false)
+    end
+  end
 
   local params_menu={
     {id="db",name="volume",min=1,max=8,exp=false,div=1,default=6,unit="level",values={-96,-12,-9,-6,-3,0,3,6}},
@@ -41,8 +49,20 @@ function Looper:init()
     _menu.rebuild_params()
   end)
   params:add_option(self.id.."hold_change","static holds",{"no","yes"},1)
-  params:add_option(self.id.."note_pressing","note pressing",{"press","toggle"},1)
-  params:add_option(self.id.."arp_option","arp speeds",{"normal","triplets","fast"},1)
+  params:add_option(self.id.."note_pressing","note pressing",{"press","toggle"},2)
+  params:set_action(self.id.."note_pressing",function(x)
+    if x==1 then
+      for r=1,6 do
+        for c=1,6 do
+          if not self.buttons[r][c] then
+            self:note_grid_off(r,c)
+          end
+        end
+      end
+    end
+  end)
+  params:add_option(self.id.."arp_option","arp speeds",{"1/4","1/8","1/12","1/16","1/24","1/36"})
+
   for loop=1,8 do
     for _,pram in ipairs(params_menu) do
       local formatter=pram.formatter
@@ -95,25 +115,7 @@ function Looper:clock_arps(arp_beat,denominator)
     do return end
   end
   local do_play_note=false
-  if params:get(self.id.."arp_option")==1 then
-    do_play_note=(num_notes_on==1 and denominator==2)
-    do_play_note=do_play_note or (num_notes_on==2 and denominator==4)
-    do_play_note=do_play_note or (num_notes_on==3 and denominator==12)
-    do_play_note=do_play_note or (num_notes_on>=4 and denominator==16)
-    -- arp_option_lights[1] = do_play_note and 1 or 0
-  elseif params:get(self.id.."arp_option")==2 then
-    do_play_note=(num_notes_on==1 and denominator==2)
-    do_play_note=do_play_note or (num_notes_on==2 and denominator==8)
-    do_play_note=do_play_note or (num_notes_on==3 and denominator==16)
-    do_play_note=do_play_note or (num_notes_on>=4 and denominator==24)
-    -- arp_option_lights[2] = do_play_note and 1 or 0
-  elseif params:get(self.id.."arp_option")==3 then
-    do_play_note=(num_notes_on==1 and denominator==4)
-    do_play_note=do_play_note or (num_notes_on==2 and denominator==16)
-    do_play_note=do_play_note or (num_notes_on==3 and denominator==24)
-    do_play_note=do_play_note or (num_notes_on>=4 and denominator==32)
-    -- arp_option_lights[3] = do_play_note and 1 or 0
-  end
+  do_play_note=denominator==self.arp_options[params:get(self.id.."arp_option")]
   if do_play_note and num_notes_on>0 then
     local x=self.notes_on[arp_beat%num_notes_on+1]
     local note=params:get(self.id.."hold_change")==1 and chords[clock_chord].m[x[1]][x[2]] or x[3]
@@ -149,8 +151,17 @@ function Looper:note_off()
   -- crow.output[2](false)
 end
 
+function Looper:button_down(r,c)
+  self.buttons[r][c]=true
+end
+
+function Looper:button_up(r,c)
+  self.buttons[r][c]=false
+end
+
 function Looper:note_grid_on(r,c)
   local note=chords[clock_chord].m[r][c]
+  print(r,c,note)
   print(string.format("[looper %d] note_grid_on %d,%d on: %d",self.id,r,c,note))
   if #self.notes_on==0 then
     self:note_on(note)
@@ -177,7 +188,7 @@ function Looper:note_grid_off(r,c)
 end
 
 function Looper:rec_queue_up(x)
-  print(string.format("[looper %d] rec_queue_up %d"),self.id,x)
+  print(string.format("[looper %d] rec_queue_up %d",self.id,x))
   -- don't queue up twice
   for _,v in ipairs(self.rec_queue) do
     if v==x then
@@ -185,7 +196,7 @@ function Looper:rec_queue_up(x)
     end
   end
   table.insert(self.rec_queue,x)
-  print("[rec] queued",x)
+  print(string.format("[looper %d] queued %d",self.id,x))
 end
 
 function Looper:is_in_rec_queue(i)
@@ -204,7 +215,7 @@ end
 function Looper:rec_queue_down()
   print(string.format("[looper %d] rec_queue_down",self.id))
   if self.rec_current>0 then
-    print(string.format("[looper %d] finished %d",self.rec_current))
+    print(string.format("[looper %d] finished %d",self.id,self.rec_current))
     self.loops_recorded[self.rec_current]=true
   end
   if next(self.rec_queue)==nil then
@@ -212,7 +223,7 @@ function Looper:rec_queue_down()
     do return end
   end
   local x=table.remove(self.rec_queue,1)
-  engine.record(self.id+(self.id==1 and 0 or 8),x,beats_total*clock.get_beat_sec(),self.id==1 and 0 or 1)
+  engine.record((self.id==1 and 0 or 8)+x,beats_total*clock.get_beat_sec(),self.id==1 and 0 or 1)
   params:set(self.id.."loop",x)
   print(string.format("[looper %d] recording %d",self.id,x))
   self.rec_current=x
