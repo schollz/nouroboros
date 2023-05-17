@@ -16,6 +16,7 @@ function Looper:init()
     print("[looper] error: ID not defined")
     do return end
   end
+  self.notes_turned_on={}
   self.rec_queue={}
   self.rec_current=0
   self.rec_loops=0
@@ -38,8 +39,14 @@ function Looper:init()
     end
   end
 
+  crow.output[self.id==1 and 2 or 4].action=string.format("adsr( %2.3f, 1, 7, %2.3f)",1,1)
+  local do_set_crow=function()
+    crow.output[self.id==1 and 2 or 4].action=string.format("adsr( %2.3f, 1, 7, %2.3f)",self:pget("attack"),self:pget("release"))
+  end
   local params_menu={
     {id="db",name="volume",min=1,max=8,exp=false,div=1,default=6,unit="level",values={-96,-12,-9,-6,-3,0,3,6}},
+    {id="attack",name="attack",min=10,max=10000,exp=false,div=10,default=100,unit="ms",action=do_set_crow},
+    {id="release",name="release",min=0.1,max=30,exp=false,div=0.1,default=1,unit="s",action=do_set_crow},
   }
   params:add_group("LOOPER "..self.id,1+#params_menu*8)
   params:add_number(self.id.."loop","loop",1,8,1)
@@ -53,8 +60,11 @@ function Looper:init()
         end
       end
     end
+    do_set_crow()
     _menu.rebuild_params()
   end)
+  params:add_option(self.id.."midi_device","midi device",midi_device_names,1)
+  params:add_number(self.id.."midi_channel","midi channel",1,16,1)
   params:add_option(self.id.."hold_change","static holds",{"no","yes"},1)
   params:add_option(self.id.."note_pressing","note pressing",{"press","toggle"},2)
   params:set_action(self.id.."note_pressing",function(x)
@@ -90,7 +100,11 @@ function Looper:init()
         if pram.values~=nil then
           x=pram.values[x]
         end
-        engine.set_loop(loop+(self.id==1 and 0 or 8),pram.id,x)
+        if pram.action~=nil then
+          pram.action(x)
+        else
+          engine.set_loop(loop+(self.id==1 and 0 or 8),pram.id,x)
+        end
       end)
     end
   end
@@ -155,13 +169,29 @@ end
 
 function Looper:note_on(note)
   print(string.format("[looper %d] note_on %d",self.id,note))
+  for k,v in pairs(self.notes_turned_on) do
+    self:note_off(k)
+  end
   crow.output[self.id==1 and 1 or 3].volts=(note-24)/12
+  crow.output[self.id==1 and 2 or 4](true)
+  if params:get(self.id.."midi_device")>1 then
+    midi_device[params:string(self.id.."midi_device")]:note_on(note,60,params:get(self.id.."midi_channel"))
+  end
+  self.notes_turned_on[note]=true
 end
 
-function Looper:note_off()
-  print(string.format("[looper %d] note_off",self.id))
+function Looper:note_off(note)
+  print(string.format("[looper %d] note_off %d",self.id,note))
+  self.notes_turned_on[note]=nil
+  if params:get(self.id.."midi_device")>1 then
+    midi_device[params:string(self.id.."midi_device")]:note_off(note,60,params:get(self.id.."midi_channel"))
+  end
+end
+
+function Looper:notes_off()
+  print(string.format("[looper %d] notes_off",self.id))
   self.note_location_playing=nil
-  -- crow.output[2](false)
+  crow.output[self.id==1 and 2 or 4](false)
 end
 
 function Looper:button_down(r,c)
@@ -196,7 +226,7 @@ function Looper:note_grid_off(r,c)
     table.remove(self.notes_on,j)
   end
   if next(self.notes_on)==nil then
-    self:note_off()
+    self:notes_off()
   end
 end
 
@@ -226,7 +256,6 @@ function Looper:is_recorded(i)
 end
 
 function Looper:rec_queue_down()
-  print(string.format("[looper %d] rec_queue_down",self.id))
   if self.rec_current>0 then
     print(string.format("[looper %d] finished %d",self.id,self.rec_current))
     self.loops_recorded[self.rec_current]=true
@@ -235,6 +264,7 @@ function Looper:rec_queue_down()
     self.rec_current=0
     do return end
   end
+  print(string.format("[looper %d] rec_queue_down",self.id))
   local x=table.remove(self.rec_queue,1)
   engine.record((self.id==1 and 0 or 8)+x,beats_total*clock.get_beat_sec(),self.id==1 and 0 or 1)
   params:set(self.id.."loop",x)

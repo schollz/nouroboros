@@ -90,6 +90,20 @@ function init()
     end
   end
 
+
+  -- setup midi
+  midi_device={}
+  midi_device_names={"none"}
+  for i,dev in pairs(midi.devices) do
+    if dev.port~=nil then
+      local connection=midi.connect(dev.port)
+      local name=string.lower(dev.name).." "..i
+      print("adding "..name.." as midi device")
+      table.insert(midi_device_names,name)
+      midi_device[name]=connection
+    end
+  end
+
   loopers={}
   for i=1,2 do
     table.insert(loopers,looper_:new{id=i})
@@ -116,17 +130,6 @@ function init()
     chords[i].m=m
   end
 
-  -- setup midi
-  midi_device={}
-  for i,dev in pairs(midi.devices) do
-    print(i,dev,dev.port)
-    if dev.port~=nil then
-      local connection=midi.connect(dev.port)
-      local name=string.lower(dev.name).." "..i
-      print("adding "..name.." as midi device")
-      midi_device[name]=connection
-    end
-  end
 
   -- initialize grid
   g_=grid_:new()
@@ -146,7 +149,7 @@ function init()
   clock_beat=0
   clock_chord=1
   local lattice=lattice_:new()
-  lattice:new_pattern{
+  lattice:new_sprocket{
     action=function(t)
       clock_beat=clock_beat+1
       -- print("[clock] beat",clock_beat)
@@ -172,7 +175,7 @@ function init()
   arp_option_lights={0,0,0}
   for i,denominator in ipairs({4,6,8,12,16,24,32}) do
     local arp_beat=0
-    lattice:new_pattern{
+    lattice:new_sprocket{
       action=function(t)
         arp_beat=arp_beat+1
         for _,l in ipairs(loopers) do
