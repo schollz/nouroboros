@@ -48,7 +48,7 @@ function Looper:init()
     {id="attack",name="attack",min=10,max=10000,exp=false,div=10,default=100,unit="ms",action=do_set_crow},
     {id="release",name="release",min=0.1,max=30,exp=false,div=0.1,default=1,unit="s",action=do_set_crow},
   }
-  params:add_group("LOOPER "..self.id,1+#params_menu*8)
+  params:add_group("LOOPER "..self.id,6+#params_menu*8)
   params:add_number(self.id.."loop","loop",1,8,1)
   params:set_action(self.id.."loop",function(x)
     for loop=1,8 do
@@ -131,7 +131,7 @@ end
 
 function Looper:clock_arps(arp_beat,denominator)
   local num_notes_on=#self.notes_on
-  if num_notes_on==0 then
+  if num_notes_on<=1 then
     self.note_location_playing=nil
     do return end
   end
