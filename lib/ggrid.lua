@@ -68,7 +68,7 @@ function GGrid:key_press(row,col,on)
     self.pressed_buttons[k]=nil
   end
 
-  if (row>=3 and row<=8 and col>=1 and col<=6) or (row>=3 and row<=8 and col>=9 and col<=14) then
+  if (row>=3 and row<=8 and col>=1 and col<=6) or (row>=3 and row<=8 and col>=11 and col<=16) then
     local l=col<9 and 1 or 2
     local r=row-2
     local c=col-(l==1 and 0 or 8)
@@ -97,10 +97,10 @@ function GGrid:key_press(row,col,on)
         loopers[l]:button_up(r,c)
       end
     end
-  elseif (col==7 or col==15) then
+  elseif (col==7 or col==10) then
     local l=col<9 and 1 or 2
     params:set(l.."loop",row)
-  elseif (col==8 or col==16) then
+  elseif (col==8 or col==9) then
     local l=col<9 and 1 or 2
     loopers[l]:pset("db",9-row)
   elseif row==2 then
@@ -108,7 +108,7 @@ function GGrid:key_press(row,col,on)
       local l=col<9 and 1 or 2
       params:set(l.."arp_option",col<7 and col or (col-8))
     end
-  elseif row==1 and (col==1 or col==9) then
+  elseif row==1 and (col==1 or col==16) then
     if on then
       local l=col<9 and 1 or 2
       params:set(l.."note_pressing",3-params:get(l.."note_pressing"))
@@ -138,14 +138,15 @@ function GGrid:get_visual()
   -- illuminate rec queue / is recorded / current loop
   for l=1,2 do
     for i=1,8 do
-      self.visual[i][l==1 and 7 or 15]=4
+      local j=l==1 and 7 or 10
+      self.visual[i][j]=4
       if loopers[l]:is_in_rec_queue(i) then
-        self.visual[i][l==1 and 7 or 15]=10
+        self.visual[i][j]=10
       elseif loopers[l]:is_recorded(i) then
-        self.visual[i][l==1 and 7 or 15]=1
+        self.visual[i][j]=1
       end
       if params:get(l.."loop")==i then
-        self.visual[i][l==1 and 7 or 15]=self.visual[i][l==1 and 7 or 15]+5
+        self.visual[i][j]=self.visual[i][j]+5
       end
     end
   end
@@ -153,7 +154,7 @@ function GGrid:get_visual()
   -- illuminate level
   for looper=1,2 do
     local v=9-loopers[looper]:pget("db")
-    local col=looper==1 and 8 or 16
+    local col=looper==1 and 8 or 9
     for row=1,8 do
       self.visual[row][col]=v<=row and 4 or 2
     end
@@ -162,13 +163,13 @@ function GGrid:get_visual()
   -- illuminate the arp speeds
   for l=1,2 do
     for i=1,6 do
-      self.visual[2][i+(l==1 and 0 or 8)]=params:get(l.."arp_option")==i and 4 or 2
+      self.visual[2][i+(l==1 and 0 or 16)]=params:get(l.."arp_option")==i and 4 or 2
     end
   end
 
   -- illuminate toggle
   for l=1,2 do
-    self.visual[1][l==1 and 1 or 9]=params:get(l.."note_pressing")==1 and 3 or 10
+    self.visual[1][l==1 and 1 or 15]=params:get(l.."note_pressing")==1 and 3 or 10
   end
 
 
@@ -195,7 +196,7 @@ function GGrid:get_visual()
     for i=1,6 do
       for j=1,6 do
         local row=i+2
-        local col=j+(looper==1 and 0 or 8)
+        local col=j+(looper==1 and 0 or 10)
         self.visual[row][col]=1
         if loopers[looper]:is_note_playing(i,j) then
           self.visual[row][col]=self.visual[row][col]+7
@@ -203,8 +204,6 @@ function GGrid:get_visual()
         if loopers[looper]:is_note_on(i,j) then
           self.visual[row][col]=self.visual[row][col]+6
         end
-
-
       end
     end
   end
