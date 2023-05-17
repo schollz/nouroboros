@@ -22,7 +22,7 @@ function Looper:init()
   self.loops_recorded={}
   self.notes_on={}
   self.note_location_playing=nil
-  self.arp_options=
+  self.arp_options={
     {4,6,8},
     {6,8,12},
     {8,12,16},
@@ -123,9 +123,9 @@ function Looper:clock_arps(arp_beat,denominator)
   end
   local do_play_note=false
   local ni=1
-  if num_notes_on>3 then 
+  if num_notes_on>3 then
     ni=3
-  elseif num_notes_on==3 then 
+  elseif num_notes_on==3 then
     ni=2
   end
   do_play_note=denominator==self.arp_options[params:get(self.id.."arp_option")][ni]

@@ -163,13 +163,13 @@ function GGrid:get_visual()
   -- illuminate the arp speeds
   for l=1,2 do
     for i=1,6 do
-      self.visual[2][i+(l==1 and 0 or 16)]=params:get(l.."arp_option")==i and 4 or 2
+      self.visual[2][i+(l==1 and 0 or 10)]=params:get(l.."arp_option")==i and 4 or 2
     end
   end
 
   -- illuminate toggle
   for l=1,2 do
-    self.visual[1][l==1 and 1 or 15]=params:get(l.."note_pressing")==1 and 3 or 10
+    self.visual[1][l==1 and 1 or 16]=params:get(l.."note_pressing")==1 and 3 or 10
   end
 
 
