@@ -170,7 +170,7 @@ function init()
   -- clocks for the arps
   -- arp options
   arp_option_lights={0,0,0}
-  for i,denominator in ipairs({2,4,6,8,12,16,18,24,32}) do
+  for i,denominator in ipairs({4,6,8,12,16,24,32}) do
     local arp_beat=0
     lattice:new_pattern{
       action=function(t)

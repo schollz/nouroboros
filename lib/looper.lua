@@ -22,7 +22,14 @@ function Looper:init()
   self.loops_recorded={}
   self.notes_on={}
   self.note_location_playing=nil
-  self.arp_options={4,8,12,16,24,32}
+  self.arp_options=
+    {4,6,8},
+    {6,8,12},
+    {8,12,16},
+    {12,16,24},
+    {16,24,32},
+    {4,12,16},
+  }
   self.buttons={}
   for i=1,6 do
     table.insert(self.buttons,{})
@@ -115,7 +122,13 @@ function Looper:clock_arps(arp_beat,denominator)
     do return end
   end
   local do_play_note=false
-  do_play_note=denominator==self.arp_options[params:get(self.id.."arp_option")]
+  local ni=1
+  if num_notes_on>3 then 
+    ni=3
+  elseif num_notes_on==3 then 
+    ni=2
+  end
+  do_play_note=denominator==self.arp_options[params:get(self.id.."arp_option")][ni]
   if do_play_note and num_notes_on>0 then
     local x=self.notes_on[arp_beat%num_notes_on+1]
     local note=params:get(self.id.."hold_change")==1 and chords[clock_chord].m[x[1]][x[2]] or x[3]
