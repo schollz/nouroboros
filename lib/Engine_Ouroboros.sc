@@ -51,9 +51,10 @@ Engine_Ouroboros : CroneEngine {
 			var sndNoCompress=In.ar(busNoCompress,2);
 			var snd1 = (SoundIn.ar(0)*\db2.kr(0).dbamp);
 			var snd2 = (SoundIn.ar(1)*\db1.kr(0).dbamp);
+			var in = snd1+snd2;
 			SendReply.kr(Impulse.kr(10),"/loop_db",[
-				Clamp.kr(LinLin.kr(Lag.kr(Amplitude.kr(snd1),0.5).ampdb,96.neg,16,0,15),0,15).round,
-				Clamp.kr(LinLin.kr(Lag.kr(Amplitude.kr(snd2),0.5).ampdb,96.neg,16,0,15),0,15).round
+				Clip.kr(LinLin.kr(Lag.kr(Amplitude.kr(snd1),0.5).ampdb,96.neg,16,0,15),0,15).round,
+				Clip.kr(LinLin.kr(Lag.kr(Amplitude.kr(snd2),0.5).ampdb,96.neg,16,0,15),0,15).round
 			]);
 			sndNoCompress = (sndNoCompress+(in*0.8));
 			sndReverb = (sndReverb+(in*0.2));
@@ -134,6 +135,7 @@ Engine_Ouroboros : CroneEngine {
 			var id=msg[1];
 			var filename=msg[2].asString;
 			Buffer.read(server,filename,action:{ arg buf;
+				var playing = false;
                 if (loops.at(id).notNil,{
                     if (loops.at(id).isRunning,{
                         playing = true;

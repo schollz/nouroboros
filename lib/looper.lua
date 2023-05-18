@@ -179,7 +179,7 @@ function Looper:emit_note()
   if num_notes_on==0 then
     do return end
   end
-  local x=self.notes_on[self.arp_beat%+1]
+  local x=self.notes_on[self.arp_beat%num_notes_on+1]
   local note=params:get(self.id.."hold_change")==1 and chords[clock_chord].m[x[1]][x[2]] or x[3]
   self.note_location_playing={x[1],x[2]}
   self:note_on(note)

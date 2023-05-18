@@ -150,12 +150,12 @@ function init()
       notes=musicutil.generate_chord_roman(12+octave*12,1,c.chord)
       for _,note in ipairs(notes) do
         table.insert(r,note)
-        all_notes[note]=true
+        all_notes_map[note]=true
       end
       notes=musicutil.generate_chord_roman(24+octave*12,1,c.chord2)
       for _,note in ipairs(notes) do
         table.insert(r,note)
-        all_notes[note]=true
+        all_notes_map[note]=true
       end
       table.insert(m,r)
     end
