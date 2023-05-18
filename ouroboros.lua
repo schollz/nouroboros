@@ -22,9 +22,9 @@ engine.name="Ouroboros"
 bpm=150
 chords={
   {chord="I",chord2="ii",beats=4},
-  {chord="V","vi",beats=2},
-  {chord="vi","vii",beats=4},
-  {chord="iii","I",beats=4},
+  {chord="V",chord2="vi",beats=2},
+  {chord="vi",chord2="vii",beats=4},
+  {chord="iii",chord2="I",beats=4},
   -- {chord="IV",chord2="ii",beats=4},
   -- {chord="V","vi",beats=4},
   -- {chord="vi","vii",beats=4},
@@ -282,25 +282,30 @@ function redraw()
   -- screen.rect(position[2]*8-7,position[1]*8-8+1,7,7)
   -- screen.stroke()
 
-  screen.font_size(16)
-  screen.level(15)
-  screen.move(1,60-16)
-  screen.text(clock_chord)
-  screen.move(12,60-16)
-  screen.text("/")
-  screen.move(25,60-16)
-  screen.text(#chords)
-
-  screen.move(1,60)
-  screen.text(clock_beat)
-  screen.move(12,60)
-  screen.text("/")
-  screen.move(25,60)
-  screen.text(chords[clock_chord].beats)
-
   for _,l in ipairs(loopers) do
     l:redraw()
   end
+
+
+  screen.font_size(16)
+  screen.level(10)
+  screen.move(1,60)
+  screen.text(clock_chord)
+  screen.move(12,60)
+  screen.text("/")
+  screen.move(25,60)
+  screen.text(#chords)
+
+  screen.move(64,60)
+  screen.text_center(chords[clock_chord].chord)
+
+  screen.move(127-24,60)
+  screen.text_right(clock_beat)
+  screen.move(127-11,60)
+  screen.text_right("/")
+  screen.move(127,60)
+  screen.text_right(chords[clock_chord].beats)
+
 
   screen.update()
 end
