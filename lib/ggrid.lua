@@ -191,7 +191,6 @@ function GGrid:get_visual()
     end
   end
 
-
   -- illuminate currently pressed button
   for k,_ in pairs(self.pressed_buttons) do
     self.pressed_buttons[k]=self.pressed_buttons[k]+1
@@ -202,15 +201,10 @@ function GGrid:get_visual()
       print("[ggrid] holding ",row,col,"for >1 second")
       self:key_held_action(row,col)
     end
-    -- if col==7 or col==15 then
-    -- else
-    --   self.visual[row][col]=15
-    -- end
   end
 
 
   -- illuminate the notes
-  -- (special)
   for looper=1,2 do
     for i=1,6 do
       for j=1,6 do

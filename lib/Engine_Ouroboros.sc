@@ -49,7 +49,12 @@ Engine_Ouroboros : CroneEngine {
 			var sndReverb=In.ar(busReverb,2);
 			var sndCompress=In.ar(busCompress,2);
 			var sndNoCompress=In.ar(busNoCompress,2);
-			var in = (SoundIn.ar(0)*\db2.kr(0).dbamp) + (SoundIn.ar(1)*\db1.kr(0).dbamp);
+			var snd1 = (SoundIn.ar(0)*\db2.kr(0).dbamp);
+			var snd2 = (SoundIn.ar(1)*\db1.kr(0).dbamp);
+			SendReply.kr(Impulse.kr(10),"/loop_db",[
+				Clamp.kr(LinLin.kr(Lag.kr(Amplitude.kr(snd1),0.5).ampdb,96.neg,16,0,15),0,15).round,
+				Clamp.kr(LinLin.kr(Lag.kr(Amplitude.kr(snd2),0.5).ampdb,96.neg,16,0,15),0,15).round
+			]);
 			sndNoCompress = (sndNoCompress+(in*0.8));
 			sndReverb = (sndReverb+(in*0.2));
 			sndCompress=Compander.ar(sndCompress,sndCompress,0.05,slopeAbove:0.1,relaxTime:0.01);
@@ -84,14 +89,6 @@ Engine_Ouroboros : CroneEngine {
 			Out.ar(0,Silent.ar(2));
 		}).add;
 
-		SynthDef("track_input",{
-			arg id,buf,t_trig,busReverb,busCompress,busNoCompress,db=0,done=0,side=0;
-            var snd = SoundIn.ar(side);
-			SendReply.kr(Impulse.kr(10),"/loop_db",[id,Lag.kr(Amplitude.kr(snd),0.5)]);
-			Out.ar(0,Silent.ar(2));
-		}).add;
-
-
 		// initialize variables
 		syns = Dictionary.new();
 		buses = Dictionary.new();
@@ -104,9 +101,9 @@ Engine_Ouroboros : CroneEngine {
 			var oscRoute=msg[0];
 			var synNum=msg[1];
 			var dunno=msg[2];
-			var id=msg[3].asInteger;
-			var db=msg[4].asFloat.ampdb;
-			NetAddr("127.0.0.1", 10111).sendMsg("loop_db",id,db);
+			var db1=msg[3].asFloat.ampdb;
+			var db2=msg[4].asFloat.ampdb;
+			NetAddr("127.0.0.1", 10111).sendMsg("loop_db",db1,db2);
 		}, '/loop_db'));
 		
 		// define buses
@@ -121,7 +118,6 @@ Engine_Ouroboros : CroneEngine {
             busNoCompress: buses.at("busNoCompress"),
             busCompress: buses.at("busCompress"),
         ]));
-		// syns.put("track_input",Synth.head(server,"track_input"));
 
 		server.sync;
 		"done loading.".postln;

@@ -314,6 +314,11 @@ function Looper:rec_queue_down()
 end
 
 function Looper:redraw()
+  if self.loop_db~=nil then
+    screen.level(self.loop_db)
+    screen.rect((self.id-1)*64,0,64,64)
+    screen.fill()
+  end
   screen.font_size(8)
   screen.level(15)
   screen.move(1,6)

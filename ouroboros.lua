@@ -104,8 +104,8 @@ function init()
       loopers[i]:load_waveform(loop,args[3])
     end,
     loop_db=function(args)
-      -- local side=tonumber(args[1])
-      -- loop_db[params:get("loop")]=util.clamp(util.round(util.linlin(-48,12,0,10,tonumber(args[2]))),0,15)
+      loopers[1].db_light=tonumber(args[1])
+      loopers[2].db_light=tonumber(args[2])
     end,
   }
   osc.event=function(path,args,from)
@@ -280,6 +280,7 @@ end
 
 function redraw()
   screen.clear()
+
   -- screen.level(0)
   -- screen.rect(1,1,128,64)
   -- screen.fill()
