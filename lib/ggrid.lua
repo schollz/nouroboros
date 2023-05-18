@@ -51,9 +51,9 @@ function GGrid:grid_key(x,y,z)
 end
 
 function GGrid:key_held_action(row,col)
-  if col==7 or col==10 then
+  if col==8 or col==9 then
     -- enqueue recording
-    local l=col==7 and 1 or 2
+    local l=col==8 and 1 or 2
     loopers[l]:rec_queue_up(row)
   end
 end
@@ -100,7 +100,7 @@ function GGrid:key_press(row,col,on)
   elseif (col==7 or col==10) then
     local l=col<9 and 1 or 2
     params:set(l.."loop",row)
-  elseif (col==8 or col==9) then
+  elseif (col==7 or col==10) then
     local l=col<9 and 1 or 2
     loopers[l]:pset("db",9-row)
   elseif row==2 then
@@ -142,7 +142,7 @@ function GGrid:get_visual()
   -- illuminate rec queue / is recorded / current loop
   for l=1,2 do
     for i=1,8 do
-      local j=l==1 and 7 or 10
+      local j=l==1 and 8 or 9
       self.visual[i][j]=4
       if loopers[l]:is_in_rec_queue(i) then
         self.visual[i][j]=10
@@ -158,7 +158,7 @@ function GGrid:get_visual()
   -- illuminate level
   for looper=1,2 do
     local v=9-loopers[looper]:pget("db")
-    local col=looper==1 and 8 or 9
+    local col=looper==1 and 7 or 10
     for row=1,8 do
       self.visual[row][col]=v<=row and 4 or 2
     end
