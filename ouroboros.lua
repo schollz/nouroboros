@@ -217,6 +217,24 @@ function init()
 
   lattice:hard_restart()
 
+
+
+  params.action_read=function(filename,silent)
+    print("[params.action_read]",filename,silent)
+    clock.run(function()
+      clock.sleep(1)
+      -- check all the loops and load them if they exist
+      for l=1,2 do
+        for i=1,8 do
+          if params:get(l.."filename"..i)~="" then
+            print(string.format("[params.action_read] adding %s to looper %d, slot %d",filename,l,i))
+            engine.load_loop((l-1)*8+i,params:get(l.."filename"..i))
+          end
+        end
+      end
+    end)
+  end
+
 end
 
 function key(k,z)

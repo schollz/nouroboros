@@ -148,6 +148,7 @@ Engine_Ouroboros : CroneEngine {
                 },{
                     this.play(id);
                 });
+				NetAddr("127.0.0.1", 10111).sendMsg("recorded",id,id,filename);
 				if (bufs.at(id).notNil,{
 					bufs.at(id).free;
 				});
