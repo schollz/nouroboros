@@ -118,6 +118,11 @@ function Looper:init()
       end
     end
   end)
+  params:add_number(self.id.."note_adjust","adjust",-15,15,0)
+  params:set_action(self.id.."note_adjust",function(x)
+    -- if note is being held, then adjust the note pitch
+    self:emit_note()
+  end)
   params:add_option(self.id.."arp_option","arp speeds",{"1/4","1/8","1/12","1/16","1/24","1/36"})
   params:add_number(self.id.."arp_division","arp division",0,2,0)
 
@@ -165,11 +170,19 @@ function Looper:clock_arps(arp_beat,denominator)
   end
   do_play_note=denominator==(self.arp_options[params:get(self.id.."arp_option")][ni]/math.pow(2,params:get(self.id.."arp_division")))
   if do_play_note and num_notes_on>0 then
-    local x=self.notes_on[arp_beat%num_notes_on+1]
-    local note=params:get(self.id.."hold_change")==1 and chords[clock_chord].m[x[1]][x[2]] or x[3]
-    self.note_location_playing={x[1],x[2]}
-    self:note_on(note)
+    self.arp_beat=arp_beat
   end
+end
+
+function Looper:emit_note()
+  local num_notes_on=#self.notes_on
+  if num_notes_on==0 then
+    do return end
+  end
+  local x=self.notes_on[self.arp_beat%+1]
+  local note=params:get(self.id.."hold_change")==1 and chords[clock_chord].m[x[1]][x[2]] or x[3]
+  self.note_location_playing={x[1],x[2]}
+  self:note_on(note)
 end
 
 function Looper:is_note_playing(i,j)
@@ -190,6 +203,13 @@ end
 
 function Looper:note_on(note)
   print(string.format("[looper %d] note_on %d",self.id,note))
+  if params:get(self.id.."note_adjust")~=0 then
+    local next_note=next_note_in_scale(note,params:get(self.id.."note_adjust"))
+    if next_note~=nil then
+      note=next_note
+      print(string.format("[looper %d] note_on %d (adjusted)",self.id,note))
+    end
+  end
   for k,v in pairs(self.notes_turned_on) do
     self:note_off(k)
   end

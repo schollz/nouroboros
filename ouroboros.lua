@@ -142,6 +142,7 @@ function init()
   params:bang()
 
   -- setup the chords
+  all_notes_map={}
   for i,c in ipairs(chords) do
     local m={}
     for octave=5,0,-1 do
@@ -149,14 +150,29 @@ function init()
       notes=musicutil.generate_chord_roman(12+octave*12,1,c.chord)
       for _,note in ipairs(notes) do
         table.insert(r,note)
+        all_notes[note]=true
       end
       notes=musicutil.generate_chord_roman(24+octave*12,1,c.chord2)
       for _,note in ipairs(notes) do
         table.insert(r,note)
+        all_notes[note]=true
       end
       table.insert(m,r)
     end
     chords[i].m=m
+  end
+  all_notes={}
+  for k in pairs(all_notes_map) do
+    table.insert(all_notes,k)
+  end
+  table.sort(all_notes)
+
+  next_note_in_scale=function(n,i)
+    for j,n2 in ipairs(all_notes) do
+      if n2==n then
+        do return all_notes[i+j] end
+      end
+    end
   end
 
 

@@ -176,6 +176,21 @@ function GGrid:get_visual()
     self.visual[1][l==1 and 1 or 16]=params:get(l.."note_pressing")==1 and 3 or 10
   end
 
+  -- illuminate note adjustments
+  for l=1,2 do
+    local row=1
+    if params:get(l.."note_adjust")==0 then
+      local col=l==1 and 5 or 2
+      self.visual[row][col]=10
+    elseif params:get(l.."note_adjust")<0 then
+      local col=l==1 and 4 or 3
+      self.visual[row][col]=math.abs(params:get(l.."note_adjust"))
+    else
+      local col=l==1 and 6 or 1
+      self.visual[row][col]=params:get(l.."note_adjust")
+    end
+  end
+
 
   -- illuminate currently pressed button
   for k,_ in pairs(self.pressed_buttons) do
