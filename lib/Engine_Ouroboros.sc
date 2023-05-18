@@ -40,7 +40,7 @@ Engine_Ouroboros : CroneEngine {
     alloc {
         // Ouroboros specific v0.0.1
         var server = context.server;
-        var xfade = 1;
+        var xfade = 0.1;
 
 		// basic players
 		SynthDef("fx",{
@@ -69,7 +69,7 @@ Engine_Ouroboros : CroneEngine {
 			var snd = SelectX.ar(Lag.kr(playhead,xfade),[snd0,snd1]);
             var reverbSend = 0.25;
 			snd = snd * amp * EnvGen.ar(Env.adsr(3,1,1,3),1-done,doneAction:2);
-			snd = snd * (LFNoise2.kr(1/Rand(4,6)).range(6.neg,6).dbamp); // amplitude lfo
+			snd = snd * (LFNoise2.kr(1/Rand(4,6)).range(6.neg,0).dbamp); // amplitude lfo
 			snd = Pan2.ar(snd,LFNoise2.kr(1/Rand(3,8),mul:0.25)); 
 			Out.ar(busCompress,0*snd);
 			Out.ar(busNoCompress,(1-reverbSend)*snd);
@@ -79,8 +79,8 @@ Engine_Ouroboros : CroneEngine {
 		SynthDef("recorder",{
 			arg id,buf,t_trig,busReverb,busCompress,busNoCompress,db=0,done=0,side=0;
             var amp = db.dbamp;
-            var snd = SoundIn.ar(side);
-            RecordBuf.ar(snd*2,buf,loop:0,doneAction:2);
+            var snd = SoundIn.ar(side)*EnvGen.ar(Env.adsr(0.1,1,1,1));
+            RecordBuf.ar(snd,buf,loop:0,doneAction:2);
 			Out.ar(0,Silent.ar(2));
 		}).add;
 

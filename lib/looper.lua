@@ -38,15 +38,19 @@ function Looper:init()
       table.insert(self.buttons[i],false)
     end
   end
+  self.waveforms={}
+  for i=1,8 do
+    table.insert(self.waveforms,waveform_:new{id=self.id,loop=i})
+  end
 
-  crow.output[self.id==1 and 2 or 4].action=string.format("adsr( %2.3f, 1, 7, %2.3f)",1,1)
+  crow.output[self.id==1 and 2 or 4].action=string.format("ar( %2.3f, %2.3f,10)",1,1)
   local do_set_crow=function()
-    crow.output[self.id==1 and 2 or 4].action=string.format("adsr( %2.3f, 1, 7, %2.3f)",self:pget("attack")/1000,self:pget("release"))
+    crow.output[self.id==1 and 2 or 4].action=string.format("{ to(10,%2.4f), to(0,%2.4f) }",self:pget("attack")/1000,self:pget("release"))
   end
   local params_menu={
     {id="db",name="volume",min=1,max=8,exp=false,div=1,default=6,values={-96,-12,-9,-6,-3,0,3,6}},
-    {id="attack",name="attack",min=10,max=10000,exp=false,div=10,default=100,unit="ms",action=do_set_crow},
-    {id="release",name="release",min=0.1,max=30,exp=false,div=0.1,default=1,unit="s",action=do_set_crow},
+    {id="attack",name="attack",min=1,max=10000,exp=false,div=1,default=10,unit="ms",action=do_set_crow},
+    {id="release",name="release",min=0.02,max=30,exp=false,div=0.02,default=0.5,unit="s",action=do_set_crow},
   }
   params:add_group("LOOPER "..self.id,6+#params_menu*8)
   params:add_number(self.id.."loop","loop",1,8,1)
@@ -67,7 +71,7 @@ function Looper:init()
   params:add_option(self.id.."midi_device","midi device",midi_device_names,1)
   params:add_number(self.id.."midi_channel","midi channel",1,16,1)
   params:add_option(self.id.."hold_change","static holds",{"no","yes"},1)
-  params:add_option(self.id.."note_pressing","note pressing",{"press","toggle"},1)
+  params:add_option(self.id.."note_pressing","note pressing",{"press","toggle"},2)
   params:set_action(self.id.."note_pressing",function(x)
     if x==1 then
       for r=1,6 do
@@ -117,6 +121,14 @@ function Looper:init()
 
 end
 
+function Looper:upload_waveform(i,s)
+  self.waveforms[i]:upload_waveform(s)
+end
+
+function Looper:load_waveform(i,f)
+  self.waveforms[i]:load(f)
+end
+
 function Looper:pget(k)
   return params:get(self.id..k..params:get(self.id.."loop"))
 end
@@ -137,7 +149,7 @@ end
 
 function Looper:clock_arps(arp_beat,denominator)
   local num_notes_on=#self.notes_on
-  if num_notes_on<=1 then
+  if num_notes_on==0 then
     self.note_location_playing=nil
     do return end
   end
@@ -179,7 +191,7 @@ function Looper:note_on(note)
     self:note_off(k)
   end
   crow.output[self.id==1 and 1 or 3].volts=(note-24)/12
-  crow.output[self.id==1 and 2 or 4](true)
+  crow.output[self.id==1 and 2 or 4]()
   if params:get(self.id.."midi_device")>1 then
     midi_device[params:string(self.id.."midi_device")]:note_on(note,60,params:get(self.id.."midi_channel"))
   end
@@ -197,7 +209,7 @@ end
 function Looper:notes_off()
   print(string.format("[looper %d] notes_off",self.id))
   self.note_location_playing=nil
-  crow.output[self.id==1 and 2 or 4](false)
+  -- crow.output[self.id==1 and 2 or 4](false)
 end
 
 function Looper:button_down(r,c)
@@ -283,14 +295,17 @@ function Looper:redraw()
   screen.level(15)
   screen.move(1,6)
 
+  for i=1,8 do
+    self.waveforms[i]:redraw((self.id-1)*64,i*8,4)
+  end
+
   if self.rec_current>0 then
-    if next(self.rec_queue)~=nil then
-      screen.text(string.format("recording %d, then %d",self.rec_current,self.rec_queue[1]))
-    else
-      screen.text(string.format("recording %d",self.rec_current))
-    end
-  elseif next(self.rec_queue)~=nil then
-    screen.text(string.format("queued %d",self.rec_queue[1]))
+    screen.move((self.id-1)*64+10,self.rec_current*8+4)
+    screen.text(string.format("recording %d",self.rec_current))
+  end
+  for _,q in ipairs(self.rec_queue) do
+    screen.move((self.id-1)*64+10,q*8+4)
+    screen.text(string.format("queued %d",q))
   end
 end
 

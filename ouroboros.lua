@@ -8,6 +8,7 @@
 --    ▼ instructions below ▼
 --
 
+waveform_=include("lib/waveform")
 utils=include("lib/utils")
 grid_=include("lib/ggrid")
 looper_=include("lib/looper")
@@ -39,6 +40,7 @@ chords={
 position={1,1}
 params_grid={"level"}
 loop_db={0,0,0,0,0,0,0,0}
+rendering_waveform=nil
 
 -- script
 --
@@ -69,6 +71,24 @@ function init()
   params:set("rev_low_time",9)
   params:set("rev_mid_time",6)
 
+  -- setup softcut renderer
+  softcut.buffer_clear()
+  softcut.event_render(function(ch,start,i,s)
+    if rendering_waveform~=nil then
+      print(string.format("[waveform] rendered %d",rendering_waveform[1],rendering_waveform[2]))
+      local max_val=0
+      for i,v in ipairs(s) do
+        if v>max_val then
+          max_val=math.abs(v)
+        end
+      end
+      for i,v in ipairs(s) do
+        s[i]=math.abs(v)/max_val
+      end
+      loopers[rendering_waveform[1]]:upload_waveform(rendering_waveform[2],s)
+    end
+  end)
+
   -- setup osc
   osc_fun={
     oscnotify=function(args)
@@ -78,6 +98,10 @@ function init()
     recorded=function(args)
       print("recorded")
       tab.print(args)
+      local x=tonumber(args[1])
+      local i=x<9 and 1 or 2
+      local loop=x<9 and x or x-8
+      loopers[i]:load_waveform(loop,args[3])
     end,
     loop_db=function(args)
       -- local side=tonumber(args[1])
