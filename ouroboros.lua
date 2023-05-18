@@ -56,6 +56,7 @@ function init()
 
   print("starting")
   os.execute(_path.code.."ouroboros/lib/oscnotify/run.sh &")
+  os.execute("mkdir -p ".."/home/we/dust/audio/ouroboros/")
 
   for k,v in pairs(reverb_settings) do
     reverb_settings_saved[k]=params:get(k)
@@ -73,6 +74,10 @@ function init()
     oscnotify=function(args)
       print("file edited ok!")
       rerun()
+    end,
+    recorded=function(args)
+      print("recorded")
+      tab.print(args)
     end,
     loop_db=function(args)
       -- local side=tonumber(args[1])
@@ -173,7 +178,7 @@ function init()
   -- clocks for the arps
   -- arp options
   arp_option_lights={0,0,0}
-  for i,denominator in ipairs({4,6,8,12,16,24,32}) do
+  for i,denominator in ipairs({0.125,0.25,0.5,1,2,3,4,6,8,12,16,24,32}) do
     local arp_beat=0
     lattice:new_sprocket{
       action=function(t)
@@ -221,19 +226,19 @@ function redraw()
   -- screen.rect(1,1,128,64)
   -- screen.fill()
 
-  local gd=g_:get_visual()
-  rows=#gd
-  cols=#gd[1]
-  for row=1,rows do
-    for col=1,cols do
-      screen.level(gd[row][col]~=0 and gd[row][col] or 1)
-      screen.rect(col*8-7,row*8-8+1,6,6)
-      screen.fill()
-    end
-  end
-  screen.level(15)
-  screen.rect(position[2]*8-7,position[1]*8-8+1,7,7)
-  screen.stroke()
+  -- local gd=g_:get_visual()
+  -- rows=#gd
+  -- cols=#gd[1]
+  -- for row=1,rows do
+  --   for col=1,cols do
+  --     screen.level(gd[row][col]~=0 and gd[row][col] or 1)
+  --     screen.rect(col*8-7,row*8-8+1,6,6)
+  --     screen.fill()
+  --   end
+  -- end
+  -- screen.level(15)
+  -- screen.rect(position[2]*8-7,position[1]*8-8+1,7,7)
+  -- screen.stroke()
 
   screen.font_size(16)
   screen.level(15)

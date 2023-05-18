@@ -51,7 +51,7 @@ function GGrid:grid_key(x,y,z)
 end
 
 function GGrid:key_held_action(row,col)
-  if col==7 or col==15 then
+  if col==7 or col==10 then
     -- enqueue recording
     local l=col==7 and 1 or 2
     loopers[l]:rec_queue_up(row)
@@ -71,7 +71,7 @@ function GGrid:key_press(row,col,on)
   if (row>=3 and row<=8 and col>=1 and col<=6) or (row>=3 and row<=8 and col>=11 and col<=16) then
     local l=col<9 and 1 or 2
     local r=row-2
-    local c=col-(l==1 and 0 or 8)
+    local c=col-(l==1 and 0 or 10)
     if params:get(l.."note_pressing")==1 then
       -- hold notes to play them
       if on then
@@ -106,7 +106,11 @@ function GGrid:key_press(row,col,on)
   elseif row==2 then
     if on then
       local l=col<9 and 1 or 2
-      params:set(l.."arp_option",col<7 and col or (col-8))
+      local v=col
+      if l==2 then
+        v=17-col
+      end
+      params:set(l.."arp_option",v)
     end
   elseif row==1 and (col==1 or col==16) then
     if on then
@@ -163,7 +167,7 @@ function GGrid:get_visual()
   -- illuminate the arp speeds
   for l=1,2 do
     for i=1,6 do
-      self.visual[2][i+(l==1 and 0 or 10)]=params:get(l.."arp_option")==i and 4 or 2
+      self.visual[2][l==1 and i or 17-i]=params:get(l.."arp_option")==i and 4 or 2
     end
   end
 

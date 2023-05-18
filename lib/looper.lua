@@ -24,8 +24,8 @@ function Looper:init()
   self.notes_on={}
   self.note_location_playing=nil
   self.arp_options={
+    {1,2,1},
     {4,6,8},
-    {6,8,12},
     {8,12,16},
     {12,16,24},
     {16,24,32},
@@ -41,10 +41,10 @@ function Looper:init()
 
   crow.output[self.id==1 and 2 or 4].action=string.format("adsr( %2.3f, 1, 7, %2.3f)",1,1)
   local do_set_crow=function()
-    crow.output[self.id==1 and 2 or 4].action=string.format("adsr( %2.3f, 1, 7, %2.3f)",self:pget("attack"),self:pget("release"))
+    crow.output[self.id==1 and 2 or 4].action=string.format("adsr( %2.3f, 1, 7, %2.3f)",self:pget("attack")/1000,self:pget("release"))
   end
   local params_menu={
-    {id="db",name="volume",min=1,max=8,exp=false,div=1,default=6,unit="level",values={-96,-12,-9,-6,-3,0,3,6}},
+    {id="db",name="volume",min=1,max=8,exp=false,div=1,default=6,values={-96,-12,-9,-6,-3,0,3,6}},
     {id="attack",name="attack",min=10,max=10000,exp=false,div=10,default=100,unit="ms",action=do_set_crow},
     {id="release",name="release",min=0.1,max=30,exp=false,div=0.1,default=1,unit="s",action=do_set_crow},
   }
@@ -62,11 +62,12 @@ function Looper:init()
     end
     do_set_crow()
     _menu.rebuild_params()
+    engine.set_fx("db"..self.id,tonumber(params:string(self.id.."db"..x)))
   end)
   params:add_option(self.id.."midi_device","midi device",midi_device_names,1)
   params:add_number(self.id.."midi_channel","midi channel",1,16,1)
   params:add_option(self.id.."hold_change","static holds",{"no","yes"},1)
-  params:add_option(self.id.."note_pressing","note pressing",{"press","toggle"},2)
+  params:add_option(self.id.."note_pressing","note pressing",{"press","toggle"},1)
   params:set_action(self.id.."note_pressing",function(x)
     if x==1 then
       for r=1,6 do
@@ -79,6 +80,7 @@ function Looper:init()
     end
   end)
   params:add_option(self.id.."arp_option","arp speeds",{"1/4","1/8","1/12","1/16","1/24","1/36"})
+  params:add_number(self.id.."arp_division","arp division",0,2,0)
 
   for loop=1,8 do
     for _,pram in ipairs(params_menu) do
@@ -104,6 +106,10 @@ function Looper:init()
           pram.action(x)
         else
           engine.set_loop(loop+(self.id==1 and 0 or 8),pram.id,x)
+          if pram.id=="db" then
+            -- set input db
+            engine.set_fx("db"..self.id,x)
+          end
         end
       end)
     end
@@ -142,7 +148,7 @@ function Looper:clock_arps(arp_beat,denominator)
   elseif num_notes_on==3 then
     ni=2
   end
-  do_play_note=denominator==self.arp_options[params:get(self.id.."arp_option")][ni]
+  do_play_note=denominator==(self.arp_options[params:get(self.id.."arp_option")][ni]/math.pow(2,params:get(self.id.."arp_division")))
   if do_play_note and num_notes_on>0 then
     local x=self.notes_on[arp_beat%num_notes_on+1]
     local note=params:get(self.id.."hold_change")==1 and chords[clock_chord].m[x[1]][x[2]] or x[3]
@@ -266,7 +272,7 @@ function Looper:rec_queue_down()
   end
   print(string.format("[looper %d] rec_queue_down",self.id))
   local x=table.remove(self.rec_queue,1)
-  engine.record((self.id==1 and 0 or 8)+x,beats_total*clock.get_beat_sec(),self.id==1 and 0 or 1)
+  engine.record((self.id==1 and 0 or 8)+x,beats_total*clock.get_beat_sec(),self.id==1 and 0 or 1,"/home/we/dust/audio/ouroboros/"..os.date('%Y-%m-%d-%H%M%S').."_"..self.id..".wav")
   params:set(self.id.."loop",x)
   print(string.format("[looper %d] recording %d",self.id,x))
   self.rec_current=x

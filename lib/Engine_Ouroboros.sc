@@ -49,7 +49,7 @@ Engine_Ouroboros : CroneEngine {
 			var sndReverb=In.ar(busReverb,2);
 			var sndCompress=In.ar(busCompress,2);
 			var sndNoCompress=In.ar(busNoCompress,2);
-			var in = (SoundIn.ar(0)*\amp2.kr(1)) + (SoundIn.ar(1)*\amp2.kr(1));
+			var in = (SoundIn.ar(0)*\db2.kr(0).dbamp) + (SoundIn.ar(1)*\db1.kr(0).dbamp);
 			sndNoCompress = (sndNoCompress+(in*0.8));
 			sndReverb = (sndReverb+(in*0.2));
 			sndCompress=Compander.ar(sndCompress,sndCompress,0.05,slopeAbove:0.1,relaxTime:0.01);
@@ -80,7 +80,7 @@ Engine_Ouroboros : CroneEngine {
 			arg id,buf,t_trig,busReverb,busCompress,busNoCompress,db=0,done=0,side=0;
             var amp = db.dbamp;
             var snd = SoundIn.ar(side);
-            RecordBuf.ar(snd,buf,loop:0,doneAction:2);
+            RecordBuf.ar(snd*2,buf,loop:0,doneAction:2);
 			Out.ar(0,Silent.ar(2));
 		}).add;
 
@@ -134,10 +134,11 @@ Engine_Ouroboros : CroneEngine {
             });
         });
 
-		this.addCommand("record","ifi",{ arg msg;
+		this.addCommand("record","ifis",{ arg msg;
             var id=msg[1];
             var seconds=msg[2].asFloat+(xfade*1.5);
 			var side=1-msg[3];
+			var filename=msg[4].asString;
 
             // initiate a routine to automatically start playing loop
             Routine {
@@ -165,6 +166,13 @@ Engine_Ouroboros : CroneEngine {
 					side: side,
                 ]).onFree({
                     ["[ouro] finished recording loop",id].postln;
+					buf.write(filename,headerFormat: "wav", sampleFormat: "int16",numFrames:seconds*server.sampleRate,completionMessage:{
+						["[ouro] finished writing",filename].postln;
+						Routine{
+							1.wait;
+							NetAddr("127.0.0.1", 10111).sendMsg("recorded",msg[1],msg[3],filename);
+						}.play;
+					});
                 }));
             });
 		});
@@ -185,6 +193,12 @@ Engine_Ouroboros : CroneEngine {
                     loops.at(id).set(k,v);
                 });
             });
+		});
+
+		this.addCommand("set_fx","sf",{ arg msg;
+			var k=msg[1].asSymbol;
+			var v=msg[2];
+			syns.at("fx").set(k,v);
 		});
     }
 
