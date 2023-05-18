@@ -134,6 +134,27 @@ Engine_Ouroboros : CroneEngine {
             });
         });
 
+		this.addCommand("load_loop","is",{ arg msg;
+			var id=msg[1];
+			var filename=msg[2].asString;
+			Buffer.read(server,filename,action:{ arg buf;
+                if (loops.at(id).notNil,{
+                    if (loops.at(id).isRunning,{
+                        playing = true;
+                    });
+                });
+                if (playing,{
+                    loops.at(id).set(\buf,buf);
+                },{
+                    this.play(id);
+                });
+				if (bufs.at(id).notNil,{
+					bufs.at(id).free;
+				});
+				bufs.put(id,buf);
+			});
+		});
+
 		this.addCommand("record","ifis",{ arg msg;
             var id=msg[1];
             var seconds=msg[2].asFloat+(xfade*1.5);

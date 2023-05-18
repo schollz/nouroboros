@@ -52,7 +52,7 @@ function Looper:init()
     {id="attack",name="attack",min=1,max=10000,exp=false,div=1,default=10,unit="ms",action=do_set_crow},
     {id="release",name="release",min=0.02,max=30,exp=false,div=0.02,default=0.5,unit="s",action=do_set_crow},
   }
-  params:add_group("LOOPER "..self.id,6+#params_menu*8)
+  params:add_group("LOOPER "..self.id,9+#params_menu*8)
   params:add_number(self.id.."loop","loop",1,8,1)
   params:set_action(self.id.."loop",function(x)
     for loop=1,8 do
@@ -68,24 +68,6 @@ function Looper:init()
     _menu.rebuild_params()
     engine.set_fx("db"..self.id,tonumber(params:string(self.id.."db"..x)))
   end)
-  params:add_option(self.id.."midi_device","midi device",midi_device_names,1)
-  params:add_number(self.id.."midi_channel","midi channel",1,16,1)
-  params:add_option(self.id.."hold_change","static holds",{"no","yes"},1)
-  params:add_option(self.id.."note_pressing","note pressing",{"press","toggle"},2)
-  params:set_action(self.id.."note_pressing",function(x)
-    if x==1 then
-      for r=1,6 do
-        for c=1,6 do
-          if not self.buttons[r][c] then
-            self:note_grid_off(r,c)
-          end
-        end
-      end
-    end
-  end)
-  params:add_option(self.id.."arp_option","arp speeds",{"1/4","1/8","1/12","1/16","1/24","1/36"})
-  params:add_number(self.id.."arp_division","arp division",0,2,0)
-
   for loop=1,8 do
     for _,pram in ipairs(params_menu) do
       local formatter=pram.formatter
@@ -118,6 +100,26 @@ function Looper:init()
       end)
     end
   end
+  params:add_text(self.id.."justtext","-- globals --")
+  params:add_text(self.id.."filename","")
+  params:hide(self.id.."filename")
+  params:add_option(self.id.."midi_device","midi device",midi_device_names,1)
+  params:add_number(self.id.."midi_channel","midi channel",1,16,1)
+  params:add_option(self.id.."hold_change","static holds",{"no","yes"},1)
+  params:add_option(self.id.."note_pressing","note pressing",{"press","toggle"},2)
+  params:set_action(self.id.."note_pressing",function(x)
+    if x==1 then
+      for r=1,6 do
+        for c=1,6 do
+          if not self.buttons[r][c] then
+            self:note_grid_off(r,c)
+          end
+        end
+      end
+    end
+  end)
+  params:add_option(self.id.."arp_option","arp speeds",{"1/4","1/8","1/12","1/16","1/24","1/36"})
+  params:add_number(self.id.."arp_division","arp division",0,2,0)
 
 end
 
@@ -126,6 +128,7 @@ function Looper:upload_waveform(i,s)
 end
 
 function Looper:load_waveform(i,f)
+  self:pset("filename",f)
   self.waveforms[i]:load(f)
 end
 
