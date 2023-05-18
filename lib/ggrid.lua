@@ -117,6 +117,15 @@ function GGrid:key_press(row,col,on)
       local l=col<9 and 1 or 2
       params:set(l.."note_pressing",3-params:get(l.."note_pressing"))
     end
+  elseif row==1 and ((col>=4 and col<=6) or (col>=11 and col<=13)) then
+    local l=col<9 and 1 or 2
+    if (col==4 or col==13) then
+      params:delta(l.."note_adjust",-1)
+    elseif (col==5 or col==12) then
+      params:set(l.."note_adjust",0)
+    else
+      params:delta(l.."note_adjust",1)
+    end
   end
 end
 

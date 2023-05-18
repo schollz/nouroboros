@@ -52,7 +52,7 @@ function Looper:init()
     {id="attack",name="attack",min=1,max=10000,exp=false,div=1,default=10,unit="ms",action=do_set_crow},
     {id="release",name="release",min=0.02,max=30,exp=false,div=0.02,default=0.5,unit="s",action=do_set_crow},
   }
-  params:add_group("LOOPER "..self.id,9+#params_menu*8)
+  params:add_group("LOOPER "..self.id,10+#params_menu*8)
   params:add_number(self.id.."loop","loop",1,8,1)
   params:set_action(self.id.."loop",function(x)
     for loop=1,8 do
@@ -100,7 +100,7 @@ function Looper:init()
       end)
     end
   end
-  params:add_text(self.id.."justtext","-- globals --")
+  params:add_text(self.id.."justtext","~~all loops~~")
   params:add_text(self.id.."filename","")
   params:hide(self.id.."filename")
   params:add_option(self.id.."midi_device","midi device",midi_device_names,1)
@@ -118,7 +118,7 @@ function Looper:init()
       end
     end
   end)
-  params:add_number(self.id.."note_adjust","adjust",-15,15,0)
+  params:add_number(self.id.."note_adjust","adjust note",-15,15,0)
   params:set_action(self.id.."note_adjust",function(x)
     -- if note is being held, then adjust the note pitch
     self:emit_note()
