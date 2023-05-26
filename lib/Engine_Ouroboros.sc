@@ -86,7 +86,7 @@ Engine_Ouroboros : CroneEngine {
 			arg id,buf,t_trig,busReverb,busCompress,busNoCompress,db=0,done=0,side=0;
             var amp = db.dbamp;
             var snd = SoundIn.ar(side)*EnvGen.ar(Env.adsr(0.1,1,1,1));
-            RecordBuf.ar(snd,buf,loop:0,doneAction:2);
+            RecordBuf.ar(snd*(6.dbamp),buf,loop:0,doneAction:2);
 			Out.ar(0,Silent.ar(2));
 		}).add;
 

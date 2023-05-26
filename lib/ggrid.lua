@@ -97,7 +97,7 @@ function GGrid:key_press(row,col,on)
         loopers[l]:button_up(r,c)
       end
     end
-  elseif (col==7 or col==10) then
+  elseif (col==8 or col==9) then
     local l=col<9 and 1 or 2
     params:set(l.."loop",row)
   elseif (col==7 or col==10) then
@@ -118,13 +118,15 @@ function GGrid:key_press(row,col,on)
       params:set(l.."note_pressing",3-params:get(l.."note_pressing"))
     end
   elseif row==1 and ((col>=4 and col<=6) or (col>=11 and col<=13)) then
-    local l=col<9 and 1 or 2
-    if (col==4 or col==13) then
-      params:delta(l.."note_adjust",-1)
-    elseif (col==5 or col==12) then
-      params:set(l.."note_adjust",0)
-    else
-      params:delta(l.."note_adjust",1)
+    if on then
+      local l=col<9 and 1 or 2
+      if (col==4 or col==13) then
+        params:delta(l.."note_adjust",-1)
+      elseif (col==5 or col==12) then
+        params:set(l.."note_adjust",0)
+      else
+        params:delta(l.."note_adjust",1)
+      end
     end
   end
 end
@@ -189,13 +191,13 @@ function GGrid:get_visual()
   for l=1,2 do
     local row=1
     if params:get(l.."note_adjust")==0 then
-      local col=l==1 and 5 or 2
+      local col=l==1 and 5 or 12
       self.visual[row][col]=10
     elseif params:get(l.."note_adjust")<0 then
-      local col=l==1 and 4 or 3
+      local col=l==1 and 4 or 13
       self.visual[row][col]=math.abs(params:get(l.."note_adjust"))
     else
-      local col=l==1 and 6 or 1
+      local col=l==1 and 6 or 11
       self.visual[row][col]=params:get(l.."note_adjust")
     end
   end

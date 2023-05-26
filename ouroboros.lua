@@ -19,16 +19,16 @@ engine.name="Ouroboros"
 --
 -- SONG SPECIFIC
 --
-bpm=150
+bpm=130
 chords={
   {chord="I",chord2="ii",beats=4},
-  {chord="V",chord2="vi",beats=2},
+  {chord="V",chord2="vi",beats=4},
   {chord="vi",chord2="vii",beats=4},
   {chord="iii",chord2="I",beats=4},
-  -- {chord="IV",chord2="ii",beats=4},
-  -- {chord="V","vi",beats=4},
-  -- {chord="vi","vii",beats=4},
-  -- {chord="I","I",beats=4},
+  {chord="IV",chord2="ii",beats=4},
+  {chord="V","vi",beats=4},
+  {chord="vi","vii",beats=6},
+  {chord="I","I",beats=2},
 }
 --
 -- THANKS
@@ -162,7 +162,7 @@ function init()
     chords[i].m=m
   end
   all_notes={}
-  for k in pairs(all_notes_map) do
+  for k,_ in pairs(all_notes_map) do
     table.insert(all_notes,k)
   end
   table.sort(all_notes)

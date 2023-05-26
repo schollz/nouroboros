@@ -25,9 +25,9 @@ function Looper:init()
   self.note_location_playing=nil
   self.arp_options={
     {1,2,1},
+    {2,4,6},
     {4,6,8},
     {8,12,16},
-    {12,16,24},
     {16,24,32},
     {4,12,16},
   }
@@ -133,7 +133,7 @@ function Looper:upload_waveform(i,s)
 end
 
 function Looper:load_waveform(i,f)
-  self:pset("filename",f)
+  params:set(self.id.."filename",f)
   self.waveforms[i]:load(f)
 end
 
@@ -171,6 +171,7 @@ function Looper:clock_arps(arp_beat,denominator)
   do_play_note=denominator==(self.arp_options[params:get(self.id.."arp_option")][ni]/math.pow(2,params:get(self.id.."arp_division")))
   if do_play_note and num_notes_on>0 then
     self.arp_beat=arp_beat
+    self:emit_note()
   end
 end
 
