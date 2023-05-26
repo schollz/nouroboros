@@ -24,12 +24,12 @@ function Looper:init()
   self.notes_on={}
   self.note_location_playing=nil
   self.arp_options={
-    {1,2,1},
-    {2,4,6},
-    {4,6,8},
-    {8,12,16},
-    {16,24,32},
-    {4,12,16},
+    {1,1,1,2},
+    {2,2,3,4},
+    {2,4,6,4,8,6,8},
+    {4,8,6,8,16,12},
+    {8,8,12,8,16},
+    {8,4,12,4,24,6},
   }
   self.buttons={}
   for i=1,6 do
@@ -162,13 +162,14 @@ function Looper:clock_arps(arp_beat,denominator)
     do return end
   end
   local do_play_note=false
-  local ni=1
-  if num_notes_on>3 then
-    ni=3
-  elseif num_notes_on==3 then
-    ni=2
+  local op=4
+  if self.arp_options[params:get(self.id.."arp_option")][num_notes_on]~=nil then
+    op=self.arp_options[params:get(self.id.."arp_option")][num_notes_on]
+  else
+    op=self.arp_options[params:get(self.id.."arp_option")][#self.arp_options[params:get(self.id.."arp_option")]]
   end
-  do_play_note=denominator==(self.arp_options[params:get(self.id.."arp_option")][ni]/math.pow(2,params:get(self.id.."arp_division")))
+  op=op/math.pow(2,params:get(self.id.."arp_division"))
+  do_play_note=(denominator==op)
   if do_play_note and num_notes_on>0 then
     self.arp_beat=arp_beat
     self:emit_note()
@@ -340,5 +341,7 @@ end
 
 
 return Looper
+
+
 
 
