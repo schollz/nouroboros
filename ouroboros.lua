@@ -19,7 +19,7 @@ engine.name="Ouroboros"
 --
 -- SONG SPECIFIC
 --
-bpm=130
+bpm=90
 chords={
   {chord="I",chord2="ii",beats=4},
   {chord="V",chord2="vi",beats=4},

@@ -43,14 +43,15 @@ function Looper:init()
     table.insert(self.waveforms,waveform_:new{id=self.id,loop=i})
   end
 
-  crow.output[self.id==1 and 2 or 4].action=string.format("ar( %2.3f, %2.3f,10)",1,1)
+  crow.output[self.id==1 and 2 or 4].action=string.format("adsr( %2.3f,1,7, %2.3f)",1,1)
   local do_set_crow=function()
-    crow.output[self.id==1 and 2 or 4].action=string.format("{ to(10,%2.4f), to(0,%2.4f) }",self:pget("attack")/1000,self:pget("release"))
+    -- crow.output[self.id==1 and 2 or 4].action=string.format("{ to(10,%2.4f), to(0,%2.4f) }",self:pget("attack")/1000,self:pget("release"))
+    crow.output[self.id==1 and 2 or 4].action=string.format("adsr( %2.3f,1,7, %2.3f)",self:pget("attack")/1000,self:pget("release"))
   end
   local params_menu={
     {id="db",name="volume",min=1,max=8,exp=false,div=1,default=6,values={-96,-12,-9,-6,-3,0,3,6}},
-    {id="attack",name="attack",min=1,max=10000,exp=false,div=1,default=10,unit="ms",action=do_set_crow},
-    {id="release",name="release",min=0.02,max=30,exp=false,div=0.02,default=0.5,unit="s",action=do_set_crow},
+    {id="attack",name="attack",min=1,max=10000,exp=false,div=1,default=self.id==1 and 10 or 1000,unit="ms",action=do_set_crow},
+    {id="release",name="release",min=0.02,max=30,exp=false,div=0.02,default=self.id==1 and 0.5 or 0.1,unit="s",action=do_set_crow},
   }
   params:add_group("LOOPER "..self.id,10+#params_menu*8)
   params:add_number(self.id.."loop","loop",1,8,1)
@@ -216,7 +217,7 @@ function Looper:note_on(note)
     self:note_off(k)
   end
   crow.output[self.id==1 and 1 or 3].volts=(note-24)/12
-  crow.output[self.id==1 and 2 or 4]()
+  crow.output[self.id==1 and 2 or 4](true)
   if params:get(self.id.."midi_device")>1 then
     midi_device[params:string(self.id.."midi_device")]:note_on(note,60,params:get(self.id.."midi_channel"))
   end
@@ -234,7 +235,7 @@ end
 function Looper:notes_off()
   print(string.format("[looper %d] notes_off",self.id))
   self.note_location_playing=nil
-  -- crow.output[self.id==1 and 2 or 4](false)
+  crow.output[self.id==1 and 2 or 4](false)
 end
 
 function Looper:button_down(r,c)
