@@ -24,7 +24,7 @@ function Looper:init()
   self.notes_on={}
   self.note_location_playing=nil
   self.arp_options={
-    {1,1,1,2},
+    {0,1,1,2},
     {2,2,3,4},
     {2,4,6,4,8,6,8},
     {4,8,6,8,16,12},
@@ -43,10 +43,15 @@ function Looper:init()
     table.insert(self.waveforms,waveform_:new{id=self.id,loop=i})
   end
 
-  crow.output[self.id==1 and 2 or 4].action=string.format("adsr( %2.3f,1,7, %2.3f)",1,1)
+  -- crow.output[self.id==1 and 2 or 4].action=string.format("adsr( %2.3f,1,7, %2.3f)",1,1)
+
   local do_set_crow=function()
     -- crow.output[self.id==1 and 2 or 4].action=string.format("{ to(10,%2.4f), to(0,%2.4f) }",self:pget("attack")/1000,self:pget("release"))
-    crow.output[self.id==1 and 2 or 4].action=string.format("adsr( %2.3f,1,7, %2.3f)",self:pget("attack")/1000,self:pget("release"))
+    if self.id==1 then
+      crow.output[2].action=string.format("adsr( %2.3f,1,7, %2.3f)",self:pget("attack")/1000,self:pget("release"))
+    else
+      crow.output[4].action=string.format("{ to(0,0), to(5,0.01), to(5,%2.3f), to(0,0.01) }",clock.get_beat_sec()*7/8)
+    end
   end
   local params_menu={
     {id="db",name="volume",min=1,max=8,exp=false,div=1,default=6,values={-96,-12,-9,-6,-3,0,3,6}},
@@ -122,11 +127,11 @@ function Looper:init()
   params:add_number(self.id.."note_adjust","adjust note",-15,15,0)
   params:set_action(self.id.."note_adjust",function(x)
     -- if note is being held, then adjust the note pitch
-    self:emit_note()
+    -- self:emit_note()
   end)
   params:add_option(self.id.."arp_option","arp speeds",{"1/4","1/8","1/12","1/16","1/24","1/36"})
   params:add_number(self.id.."arp_division","arp division",0,2,0)
-
+  do_set_crow()
 end
 
 function Looper:upload_waveform(i,s)
@@ -146,6 +151,10 @@ function Looper:pset(k,v)
   return params:set(self.id..k..params:get(self.id.."loop"),v)
 end
 
+
+function Looper:clock_new_chord()
+  self.new_chord=true
+end
 
 function Looper:clock_loops()
   if self.rec_loops>0 then
@@ -170,7 +179,8 @@ function Looper:clock_arps(arp_beat,denominator)
     op=self.arp_options[params:get(self.id.."arp_option")][#self.arp_options[params:get(self.id.."arp_option")]]
   end
   op=op/math.pow(2,params:get(self.id.."arp_division"))
-  do_play_note=(denominator==op)
+  do_play_note=(denominator==op) or (self.new_chord and params:get(self.id.."arp_option")==1)
+  self.new_chord=false
   if do_play_note and num_notes_on>0 then
     self.arp_beat=arp_beat
     self:emit_note()
@@ -217,7 +227,20 @@ function Looper:note_on(note)
     self:note_off(k)
   end
   crow.output[self.id==1 and 1 or 3].volts=(note-24)/12
-  crow.output[self.id==1 and 2 or 4](true)
+  -- crow.output[self.id==1 and 2 or 4](true)
+  if self.id==1 then
+    crow.output[2](true)
+  else
+    local t=clock.get_beats()*clock.get_beat_sec()
+    crow.output[4]()
+    if self.last_crow~=nil and (t-self.last_crow<clock.get_beat_sec()) then
+      print(string.format("{ to(0,0), to(5,0.002), to(5,%2.3f), to(0,0.002) }",(t-self.last_crow)/4))
+      crow.output[4].action=string.format("{ to(0,0), to(5,0.005), to(5,%2.3f), to(0,0.005) }",(t-self.last_crow)/4)
+    else
+      crow.output[4].action=string.format("{ to(0,0), to(5,0.01), to(5,%2.3f), to(0,0.01) }",clock.get_beat_sec()/2)
+    end
+    self.last_crow=t
+  end
   if params:get(self.id.."midi_device")>1 then
     midi_device[params:string(self.id.."midi_device")]:note_on(note,60,params:get(self.id.."midi_channel"))
   end
@@ -235,7 +258,10 @@ end
 function Looper:notes_off()
   print(string.format("[looper %d] notes_off",self.id))
   self.note_location_playing=nil
-  crow.output[self.id==1 and 2 or 4](false)
+  if self.id==1 then
+    crow.output[2](false)
+  end
+  -- crow.output[self.id==1 and 2 or 4](false)
 end
 
 function Looper:button_down(r,c)

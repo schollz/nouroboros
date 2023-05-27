@@ -205,6 +205,9 @@ function init()
           end
         end
         -- print("[clock] new chord",chords[clock_chord].chord)
+        for _,l in ipairs(loopers) do
+          l:clock_new_chord()
+        end
       end
     end,
     division=1/4,
