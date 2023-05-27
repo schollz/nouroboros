@@ -50,8 +50,8 @@ function Looper:init()
   end
   local params_menu={
     {id="db",name="volume",min=1,max=8,exp=false,div=1,default=6,values={-96,-12,-9,-6,-3,0,3,6}},
-    {id="attack",name="attack",min=1,max=10000,exp=false,div=1,default=self.id==1 and 10 or 1000,unit="ms",action=do_set_crow},
-    {id="release",name="release",min=0.02,max=30,exp=false,div=0.02,default=self.id==1 and 0.5 or 0.1,unit="s",action=do_set_crow},
+    {id="attack",name="attack",min=1,max=10000,exp=false,div=1,default=self.id==1 and 10 or 100,unit="ms",action=do_set_crow},
+    {id="release",name="release",min=0.02,max=30,exp=false,div=0.02,default=self.id==1 and 0.5 or 0.5,unit="s",action=do_set_crow},
   }
   params:add_group("LOOPER "..self.id,10+#params_menu*8)
   params:add_number(self.id.."loop","loop",1,8,1)
