@@ -325,6 +325,10 @@ function Looper:is_recorded(i)
   return self.loops_recorded[i]
 end
 
+function Looper:is_recording(i)
+  return self.rec_current==i
+end
+
 function Looper:rec_queue_down()
   if self.rec_current>0 then
     print(string.format("[looper %d] finished %d",self.id,self.rec_current))

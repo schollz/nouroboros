@@ -154,14 +154,17 @@ function GGrid:get_visual()
   for l=1,2 do
     for i=1,8 do
       local j=l==1 and 8 or 9
-      self.visual[i][j]=4
+      self.visual[i][j]=0
       if loopers[l]:is_in_rec_queue(i) then
-        self.visual[i][j]=10
+        self.visual[i][j]=7
       elseif loopers[l]:is_recorded(i) then
-        self.visual[i][j]=1
+        self.visual[i][j]=3
+      end
+      if loopers[l]:is_recording(i) then
+        self.visual[i][j]=(self.blinks[1].v>7 and 3 or 7)
       end
       if params:get(l.."loop")==i then
-        self.visual[i][j]=self.visual[i][j]+5
+        self.visual[i][j]=self.visual[i][j]+8
       end
     end
   end

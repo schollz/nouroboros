@@ -10,6 +10,7 @@ Engine_Ouroboros : CroneEngine {
 	var syns;
 	var oscs;
     var loops;
+	var params;
     // Ouroboros ^
 
     *new { arg context, doneCallback;
@@ -20,17 +21,24 @@ Engine_Ouroboros : CroneEngine {
 	play {
 		arg id;
         if (bufs.at(id).notNil,{
+			var args=[
+                buf: bufs.at(id),
+                busReverb: buses.at("busReverb"),
+                busNoCompress: buses.at("busNoCompress"),
+                busCompress: buses.at("busCompress"),
+			];
+			// update with current volumes, etc
+			params.at(id).keysValuesDo({ arg k, v;
+				args=args++[k,v];
+			});
+			args.postln;
+
             if (loops.at(id).notNil,{
                 ["[ouro] sending done to loop",id].postln;
                 loops.at(id).set(\done,1);
             });
             ["[ouro] started playing loop",id].postln;
-            loops.put(id,Synth.before(syns.at("fx"),"looper",[
-                buf: bufs.at(id),
-                busReverb: buses.at("busReverb"),
-                busNoCompress: buses.at("busNoCompress"),
-                busCompress: buses.at("busCompress"),
-            ]).onFree({
+            loops.put(id,Synth.before(syns.at("fx"),"looper",args).onFree({
                 ["[ouro] stopped playing loop",id].postln;
             }));
             NodeWatcher.register(loops.at(id));
@@ -44,13 +52,13 @@ Engine_Ouroboros : CroneEngine {
 
 		// basic players
 		SynthDef("fx",{
-			arg busReverb,busCompress,busNoCompress;
+			arg busReverb,busCompress,busNoCompress,db1=0,db2=0;
 			var snd;
 			var sndReverb=In.ar(busReverb,2);
 			var sndCompress=In.ar(busCompress,2);
 			var sndNoCompress=In.ar(busNoCompress,2);
-			var snd1 = (SoundIn.ar(0)*\db2.kr(0).dbamp);
-			var snd2 = (SoundIn.ar(1)*\db1.kr(0).dbamp);
+			var snd1 = (SoundIn.ar(0)*VarLag.kr(db2,5,warp:\sine).dbamp);
+			var snd2 = (SoundIn.ar(1)*VarLag.kr(db1,5,warp:\sine).dbamp);
 			var in = snd1+snd2;
 			SendReply.kr(Impulse.kr(10),"/loop_db",[
 				Clip.kr(LinLin.kr(Lag.kr(Amplitude.kr(snd1),0.5).ampdb,96.neg,16,0,15),0,15).round,
@@ -68,13 +76,13 @@ Engine_Ouroboros : CroneEngine {
 
 		SynthDef("looper",{
 			arg id,buf,t_trig=0,busReverb,busCompress,busNoCompress,db=0,done=0;
-            var amp = db.dbamp;
+            var amp = VarLag.kr(db,5,warp:\sine).dbamp;
             var playhead = ToggleFF.kr(t_trig);
 			var snd0 = PlayBuf.ar(1,buf,rate:BufRateScale.ir(buf),loop:1,trigger:1-playhead);
 			var snd1 = PlayBuf.ar(1,buf,rate:BufRateScale.ir(buf),loop:1,trigger:playhead);
 			var snd = SelectX.ar(Lag.kr(playhead,xfade),[snd0,snd1]);
             var reverbSend = 0.25;
-			snd = snd * Lag.kr(amp,3) * EnvGen.ar(Env.adsr(3,1,1,3),1-done,doneAction:2);
+			snd = snd * amp * EnvGen.ar(Env.adsr(3,1,1,3),1-done,doneAction:2);
 			snd = snd * (LFNoise2.kr(1/Rand(4,6)).range(9.neg,0).dbamp); // amplitude lfo
 			snd = Pan2.ar(snd,LFNoise2.kr(1/Rand(3,8),mul:0.75)); 
 			Out.ar(busCompress,0*snd);
@@ -96,6 +104,10 @@ Engine_Ouroboros : CroneEngine {
 		bufs = Dictionary.new();
 		oscs = Dictionary.new();
 		loops = Dictionary.new();
+		params = Dictionary.new();
+		17.do({arg i;
+			params.put(i,Dictionary.new());
+		});
 
 		server.sync;
 		oscs.put("loop_db",OSCFunc({ |msg|
@@ -201,6 +213,8 @@ Engine_Ouroboros : CroneEngine {
             var id=msg[1];
             var k=msg[2];
             var v=msg[3];
+			["set_loop",id,k,v].postln;
+			params.at(id).put(k,v);
             if (syns.at(id).notNil,{
                 if (syns.at(id).isRunning,{
                     ["[ouro] setting syn",id,k,"=",v].postln;
