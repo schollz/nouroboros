@@ -241,6 +241,27 @@ function GGrid:get_visual()
     end
   end
 
+  if clock_chord>0 and clock_chord<16 then
+    self.visual[7][clock_chord]=self.visual[7][clock_chord]+2
+    if self.visual[7][clock_chord]>15 then
+      self.visual[7][clock_chord]=15
+    end
+    self.visual[7][17-clock_chord]=self.visual[7][17-clock_chord]+2
+    if self.visual[7][17-clock_chord]>15 then
+      self.visual[7][17-clock_chord]=15
+    end
+  end
+
+  if clock_beat>0 and clock_beat<16 then
+    self.visual[8][clock_beat]=self.visual[8][clock_beat]+2
+    if self.visual[8][clock_beat]>15 then
+      self.visual[8][clock_beat]=15
+    end
+    self.visual[8][17-clock_beat]=self.visual[8][17-clock_beat]+2
+    if self.visual[8][17-clock_beat]>15 then
+      self.visual[8][17-clock_beat]=15
+    end
+  end
   return self.visual
 end
 
