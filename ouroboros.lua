@@ -19,16 +19,20 @@ engine.name="Ouroboros"
 --
 -- SONG SPECIFIC
 --
-bpm=120
+bpm=200
 chords={
-  {chord="vi",chord2="ii",beats=3},
-  {chord="IV",chord2="vi",beats=3},
-  {chord="V",chord2="vii",beats=6},
-  {chord="I",chord2="I",beats=6},
-  {chord="V",chord2="ii",beats=3},
-  {chord="vi","vi",beats=3},
-  {chord="ii","vii",beats=3},
-  {chord="IV","I",beats=3},
+  {chord="vi",chord2="I",beats=6},
+  {chord="IV",chord2="vi",beats=6},
+  {chord="I",chord2="IV",beats=6},
+  {chord="iii",chord2="I",beats=6},
+  {chord="vi",chord2="iii",beats=6},
+  {chord="IV",chord2="vi",beats=6},
+  {chord="I",chord2="IV",beats=6},
+  {chord="V",chord2="I",beats=6},
+  -- {chord="V",chord2="ii",beats=3},
+  -- {chord="vi","vi",beats=3},
+  -- {chord="ii","vii",beats=3},
+  -- {chord="IV","I",beats=3},
 }
 --
 -- THANKS

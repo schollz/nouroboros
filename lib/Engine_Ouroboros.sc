@@ -48,7 +48,7 @@ Engine_Ouroboros : CroneEngine {
     alloc {
         // Ouroboros specific v0.0.1
         var server = context.server;
-        var xfade = 0.1;
+        var xfade = 0.5;
 
 		// basic players
 		SynthDef("fx",{

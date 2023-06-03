@@ -117,6 +117,11 @@ function GGrid:key_press(row,col,on)
       local l=col<9 and 1 or 2
       params:set(l.."note_pressing",3-params:get(l.."note_pressing"))
     end
+  elseif row==1 and (col==2 or col==15) then
+    if on then
+      local l=col<9 and 1 or 2
+      params:set(l.."hold_change",3-params:get(l.."hold_change"))
+    end
   elseif row==1 and ((col>=4 and col<=6) or (col>=11 and col<=13)) then
     if on then
       local l=col<9 and 1 or 2
@@ -188,6 +193,7 @@ function GGrid:get_visual()
   -- illuminate toggle
   for l=1,2 do
     self.visual[1][l==1 and 1 or 16]=params:get(l.."note_pressing")==1 and 3 or 10
+    self.visual[1][l==1 and 2 or 15]=params:get(l.."hold_change")==1 and 3 or 10
   end
 
   -- illuminate note adjustments
