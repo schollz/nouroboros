@@ -7,7 +7,10 @@
 --
 --    ▼ instructions below ▼
 --
-
+if not string.find(package.cpath,"/home/we/dust/code/ouroboros/lib/") then
+  package.cpath=package.cpath..";/home/we/dust/code/ouroboros/lib/?.so"
+end
+json=require("cjson")
 include("lib/table_addons")
 waveform_=include("lib/waveform")
 utils=include("lib/utils")
@@ -174,6 +177,31 @@ function init()
       end
     end
   end
+
+  chords1=json.decode(json.encode(chords))
+  -- local cc=6
+  -- local m={}
+  -- for i,c in ipairs(chords1) do
+  --   local mi={}
+  --   for j=1,3 do
+  --     table.insert(mi,c.m[cc][j])
+  --   end
+  --   table.rotatex(mi,math.random(0,2))
+  --   table.insert(m,mi)
+  -- end
+  -- local m_min=table.maximize_row_changes(m)
+  -- for i,c in ipairs(chords1) do
+  --   for j=1,3 do
+  --     chords1[i].m[cc][j]=m_min[i][j]
+  --   end
+  -- end
+  -- for cc=1,6 do
+  --   for i,c in ipairs(chords1) do
+  --     for j=1,3 do
+  --       chords1[i].m[cc][j]=chords1[i].m[6][j]+12*(6-cc)
+  --     end
+  --   end
+  -- end
 
   local cc=6
   local m={}

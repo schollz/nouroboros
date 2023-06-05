@@ -194,6 +194,9 @@ function Looper:emit_note()
   end
   local x=self.notes_on[self.arp_beat%num_notes_on+1]
   local note=params:get(self.id.."hold_change")==1 and chords[clock_chord].m[x[1]][x[2]] or x[3]
+  if self.id==1 then
+    note=params:get(self.id.."hold_change")==1 and chords1[clock_chord].m[x[1]][x[2]] or x[3]
+  end
   self.note_location_playing={x[1],x[2]}
   self:note_on(note)
 end
@@ -274,6 +277,9 @@ end
 
 function Looper:note_grid_on(r,c)
   local note=chords[clock_chord].m[r][c]
+  if self.id==1 then
+    note=chords1[clock_chord].m[r][c]
+  end
   print(r,c,note)
   print(string.format("[looper %d] note_grid_on %d,%d on: %d",self.id,r,c,note))
   if #self.notes_on==0 then
