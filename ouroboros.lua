@@ -178,30 +178,31 @@ function init()
     end
   end
 
+  -- left side keeps the bass notes normal
   chords1=json.decode(json.encode(chords))
-  -- local cc=6
-  -- local m={}
-  -- for i,c in ipairs(chords1) do
-  --   local mi={}
-  --   for j=1,3 do
-  --     table.insert(mi,c.m[cc][j])
-  --   end
-  --   table.rotatex(mi,math.random(0,2))
-  --   table.insert(m,mi)
-  -- end
-  -- local m_min=table.maximize_row_changes(m)
-  -- for i,c in ipairs(chords1) do
-  --   for j=1,3 do
-  --     chords1[i].m[cc][j]=m_min[i][j]
-  --   end
-  -- end
-  -- for cc=1,6 do
-  --   for i,c in ipairs(chords1) do
-  --     for j=1,3 do
-  --       chords1[i].m[cc][j]=chords1[i].m[6][j]+12*(6-cc)
-  --     end
-  --   end
-  -- end
+  local cc=4
+  local m={}
+  for i,c in ipairs(chords1) do
+    local mi={}
+    for j=1,3 do
+      table.insert(mi,c.m[cc][j])
+    end
+    table.rotatex(mi,math.random(0,2))
+    table.insert(m,mi)
+  end
+  local m_min=table.minimize_row_changes(m)
+  for i,c in ipairs(chords1) do
+    for j=1,3 do
+      chords1[i].m[cc][j]=m_min[i][j]
+    end
+  end
+  for cc=1,4 do
+    for i,c in ipairs(chords1) do
+      for j=1,3 do
+        chords1[i].m[cc][j]=chords1[i].m[4][j]+12*(4-cc)
+      end
+    end
+  end
 
   local cc=6
   local m={}
