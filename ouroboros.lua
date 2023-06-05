@@ -8,6 +8,7 @@
 --    ▼ instructions below ▼
 --
 
+include("lib/table_addons")
 waveform_=include("lib/waveform")
 utils=include("lib/utils")
 grid_=include("lib/ggrid")
@@ -173,6 +174,49 @@ function init()
       end
     end
   end
+
+  local cc=6
+  local m={}
+  for i,c in ipairs(chords) do
+    local mi={}
+    for j=1,3 do
+      table.insert(mi,c.m[cc][j])
+    end
+    table.rotatex(mi,math.random(0,2))
+    table.insert(m,mi)
+  end
+  local m_min=table.minimize_row_changes(m)
+  for i,c in ipairs(chords) do
+    for j=1,3 do
+      chords[i].m[cc][j]=m_min[i][j]
+    end
+  end
+
+  for cc=1,6 do
+    for i,c in ipairs(chords) do
+      for j=1,3 do
+        chords[i].m[cc][j]=chords[i].m[6][j]+12*(6-cc)
+      end
+    end
+  end
+
+  -- for cc=1,6 do
+  --   local m={}
+  --   for i,c in ipairs(chords) do
+  --     local mi={}
+  --     for j=1,3 do
+  --       table.insert(mi,c.m[cc][j])
+  --     end
+  --     table.rotatex(mi,math.random(0,2))
+  --     table.insert(m,mi)
+  --   end
+  --   local m_min=table.minimize_row_changes(m)
+  --   for i,c in ipairs(chords) do
+  --     for j=1,3 do
+  --       chords[i].m[cc][j]=m_min[i][j]
+  --     end
+  --   end
+  -- end
 
 
   -- initialize grid

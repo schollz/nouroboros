@@ -175,7 +175,7 @@ Engine_Ouroboros : CroneEngine {
             // initiate a routine to automatically start playing loop
             Routine {
                 var playing = false;
-                seconds.wait;
+                msg[2].asFloat.wait;
                 if (loops.at(id).notNil,{
                     if (loops.at(id).isRunning,{
                         playing = true;
