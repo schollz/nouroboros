@@ -24,20 +24,51 @@ engine.name="Ouroboros"
 -- SONG SPECIFIC
 --
 bpm=200
+-- chords={
+--   {chord="vi",chord2="I",beats=6},
+--   {chord="IV",chord2="vi",beats=6},
+--   {chord="I",chord2="IV",beats=6},
+--   {chord="iii",chord2="I",beats=6},
+--   {chord="vi",chord2="iii",beats=6},
+--   {chord="IV",chord2="vi",beats=6},
+--   {chord="I",chord2="IV",beats=6},
+--   {chord="V",chord2="I",beats=6},
+--   -- {chord="V",chord2="ii",beats=3},
+--   -- {chord="vi","vi",beats=3},
+--   -- {chord="ii","vii",beats=3},
+--   -- {chord="IV","I",beats=3},
+-- }
+bpm=140
 chords={
-  {chord="vi",chord2="I",beats=6},
-  {chord="IV",chord2="vi",beats=6},
-  {chord="I",chord2="IV",beats=6},
-  {chord="iii",chord2="I",beats=6},
-  {chord="vi",chord2="iii",beats=6},
-  {chord="IV",chord2="vi",beats=6},
-  {chord="I",chord2="IV",beats=6},
-  {chord="V",chord2="I",beats=6},
-  -- {chord="V",chord2="ii",beats=3},
-  -- {chord="vi","vi",beats=3},
-  -- {chord="ii","vii",beats=3},
-  -- {chord="IV","I",beats=3},
+  {chord="I",chord2="ii",beats=3},
+  {chord="V6-9",chord2="vi",beats=3},
+  {chord="vi",chord2="V",beats=6},
+  {chord="ii",chord2="iii",beats=6},
+  {chord="IV",chord2="V",beats=8},
 }
+
+  -- sp
+  -- params:set("chord11",6,true)
+  -- params:set("chord12",4,true)
+  -- params:set("chord13",5,true)
+  -- params:set("chord14",1,true)
+  -- params:set("chord11",1,true)
+  -- params:set("chord12",14+14+5,true)
+  -- params:set("chord13",6,true)
+  -- params:set("chord14",6,true)
+  -- params:set("chord21",2,true)
+  -- params:set("chord22",2,true)
+  -- params:set("chord23",4,true)
+  -- params:set("chord24",4,true)
+  -- params:set("number_of_chords",2)
+  -- params:set("beats11",3)
+  -- params:set("beats12",3)
+  -- params:set("beats13",6)
+  -- params:set("beats21",3)
+  -- params:set("beats22",3)
+  -- params:set("beats23",3)
+  -- params:set("beats24",3)
+
 --
 -- THANKS
 --
