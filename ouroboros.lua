@@ -47,27 +47,27 @@ chords={
   {chord="IV",chord2="V",beats=8},
 }
 
-  -- sp
-  -- params:set("chord11",6,true)
-  -- params:set("chord12",4,true)
-  -- params:set("chord13",5,true)
-  -- params:set("chord14",1,true)
-  -- params:set("chord11",1,true)
-  -- params:set("chord12",14+14+5,true)
-  -- params:set("chord13",6,true)
-  -- params:set("chord14",6,true)
-  -- params:set("chord21",2,true)
-  -- params:set("chord22",2,true)
-  -- params:set("chord23",4,true)
-  -- params:set("chord24",4,true)
-  -- params:set("number_of_chords",2)
-  -- params:set("beats11",3)
-  -- params:set("beats12",3)
-  -- params:set("beats13",6)
-  -- params:set("beats21",3)
-  -- params:set("beats22",3)
-  -- params:set("beats23",3)
-  -- params:set("beats24",3)
+-- sp
+-- params:set("chord11",6,true)
+-- params:set("chord12",4,true)
+-- params:set("chord13",5,true)
+-- params:set("chord14",1,true)
+-- params:set("chord11",1,true)
+-- params:set("chord12",14+14+5,true)
+-- params:set("chord13",6,true)
+-- params:set("chord14",6,true)
+-- params:set("chord21",2,true)
+-- params:set("chord22",2,true)
+-- params:set("chord23",4,true)
+-- params:set("chord24",4,true)
+-- params:set("number_of_chords",2)
+-- params:set("beats11",3)
+-- params:set("beats12",3)
+-- params:set("beats13",6)
+-- params:set("beats21",3)
+-- params:set("beats22",3)
+-- params:set("beats23",3)
+-- params:set("beats24",3)
 
 --
 -- THANKS
@@ -368,8 +368,8 @@ end
 
 function enc(k,d)
   if k>1 then
-    params:delta(k-1.."release",d)
-    debounce_fn["show_"..k-1]={15,function() return params:get(k-1.."release") end}
+    params:delta((k-1).."release",d)
+    debounce_fn["show_"..(k-1)]={15,function() return params:get((k-1).."release") end}
   end
 end
 
@@ -429,8 +429,8 @@ function redraw()
   screen.move(127,60)
   screen.text_right(chords[clock_chord].beats)
 
-  for i=1,2 do 
-    if debounce_fn["show_"..i]~=nil then 
+  for i=1,2 do
+    if debounce_fn["show_"..i]~=nil then
       screen.level(debounce_fn["show_"..i][1])
       screen.move(i==1 and 32 or 96,32)
       screen.text_center(debounce_fn["show_"..i][2]())
