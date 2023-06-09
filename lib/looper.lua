@@ -43,22 +43,23 @@ function Looper:init()
     table.insert(self.waveforms,waveform_:new{id=self.id,loop=i})
   end
 
-  -- crow.output[self.id==1 and 2 or 4].action=string.format("adsr( %2.3f,1,7, %2.3f)",1,1)
 
   local do_set_crow=function()
-    -- crow.output[self.id==1 and 2 or 4].action=string.format("{ to(10,%2.4f), to(0,%2.4f) }",self:pget("attack")/1000,self:pget("release"))
     if self.id==1 then
-      crow.output[2].action=string.format("adsr( %2.3f,1,7, %2.3f)",self:pget("attack")/1000,self:pget("release"))
+      crow.output[2].action=string.format("ar{ %2.3f, %2.3f, 7, 'log'}",params:get(self.id.."attack")/1000,params:get(self.id.."release"))
     else
-      crow.output[4].action=string.format("{ to(0,0), to(5,0.01), to(5,%2.3f), to(0,0.01) }",clock.get_beat_sec()*7/8)
+      crow.output[4].action=string.format("adsr( %2.3f,1,7, %2.3f)",params:get(self.id.."attack")/1000,params:get(self.id.."release"))
     end
   end
   local params_menu={
     {id="db",name="volume",min=1,max=8,exp=false,div=1,default=6,values={-96,-12,-9,-6,-3,0,3,6}},
+  }
+  
+  local params_menu2={
     {id="attack",name="attack",min=1,max=10000,exp=false,div=1,default=self.id==1 and 10 or 100,unit="ms",action=do_set_crow},
     {id="release",name="release",min=0.02,max=30,exp=false,div=0.02,default=self.id==1 and 0.5 or 0.5,unit="s",action=do_set_crow},
   }
-  params:add_group("LOOPER "..self.id,10+#params_menu*8)
+  params:add_group("LOOPER "..self.id,10+#params_menu*8+#params_menu2)
   params:add_number(self.id.."loop","loop",1,8,1)
   params:set_action(self.id.."loop",function(x)
     for loop=1,8 do
@@ -106,6 +107,32 @@ function Looper:init()
       end)
     end
   end
+  -- params_menu2
+  for _,pram in ipairs(params_menu2) do
+    local formatter=pram.formatter
+    if formatter==nil and pram.values~=nil then
+      formatter=function(param)
+        return pram.values[param:get()]..(pram.unit and (" "..pram.unit) or "")
+      end
+    end
+    local pid=self.id..pram.id
+    params:add{
+      type="control",
+      id=pid,
+      name=pram.name,
+      controlspec=controlspec.new(pram.min,pram.max,pram.exp and "exp" or "lin",pram.div,pram.default,pram.unit or "",pram.div/(pram.max-pram.min)),
+      formatter=formatter,
+    }
+    params:set_action(pid,function(x)
+      if pram.values~=nil then
+        x=pram.values[x]
+      end
+      if pram.action~=nil then
+        pram.action(x)
+      end
+    end)
+  end
+
   params:add_text(self.id.."justtext","~~all loops~~")
   params:add_text(self.id.."filename","")
   params:hide(self.id.."filename")
@@ -230,19 +257,10 @@ function Looper:note_on(note)
     self:note_off(k)
   end
   crow.output[self.id==1 and 1 or 3].volts=(note-24)/12
-  -- crow.output[self.id==1 and 2 or 4](true)
   if self.id==1 then
-    crow.output[2](true)
+    crow.output[2]()
   else
-    local t=clock.get_beats()*clock.get_beat_sec()
-    crow.output[4]()
-    if self.last_crow~=nil and (t-self.last_crow<clock.get_beat_sec()) then
-      print(string.format("{ to(0,0), to(5,0.002), to(5,%2.3f), to(0,0.002) }",(t-self.last_crow)/4))
-      crow.output[4].action=string.format("{ to(0,0), to(5,0.005), to(5,%2.3f), to(0,0.005) }",(t-self.last_crow)/4)
-    else
-      crow.output[4].action=string.format("{ to(0,0), to(5,0.01), to(5,%2.3f), to(0,0.01) }",clock.get_beat_sec()/2)
-    end
-    self.last_crow=t
+    crow.output[4](true)
   end
   if params:get(self.id.."midi_device")>1 then
     midi_device[params:string(self.id.."midi_device")]:note_on(note,60,params:get(self.id.."midi_channel"))
@@ -261,10 +279,9 @@ end
 function Looper:notes_off()
   print(string.format("[looper %d] notes_off",self.id))
   self.note_location_playing=nil
-  if self.id==1 then
-    crow.output[2](false)
+  if self.id==2 then
+    crow.output[4](false)
   end
-  -- crow.output[self.id==1 and 2 or 4](false)
 end
 
 function Looper:button_down(r,c)
@@ -286,8 +303,6 @@ function Looper:note_grid_on(r,c)
     self:note_on(note)
   end
   table.insert(self.notes_on,{r,c,note})
-  -- crow.output[2].action=string.format("adsr(%2.3f,0.25,5,0.25)",util.linlin(1,127,0.05,0.5,note))
-  -- crow.output[2](true)
 end
 
 function Looper:note_grid_off(r,c)

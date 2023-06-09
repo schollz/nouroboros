@@ -80,6 +80,7 @@ position={1,1}
 params_grid={"level"}
 loop_db={0,0,0,0,0,0,0,0}
 rendering_waveform=nil
+debounce_fn={}
 
 -- script
 --
@@ -92,7 +93,6 @@ reverb_settings={
   rev_mid_time=6,
 }
 function init()
-  crow.output[2].action="adsr(1,1,5,1)"
   params:set("clock_tempo",bpm)
 
   print("starting")
@@ -284,6 +284,7 @@ function init()
 
   clock.run(function()
     while true do
+      debounce_params()
       clock.sleep(1/10)
       redraw()
     end
@@ -366,10 +367,9 @@ function key(k,z)
 end
 
 function enc(k,d)
-  if k==2 then
-    position[1]=util.wrap(position[1]+d,1,8)
-  elseif k==3 then
-    position[2]=util.wrap(position[2]+d,1,16)
+  if k>1 then
+    params:delta(k-1.."release",d)
+    debounce_fn["show_"..k-1]={15,function() return params:get(k-1.."release") end}
   end
 end
 
@@ -429,8 +429,34 @@ function redraw()
   screen.move(127,60)
   screen.text_right(chords[clock_chord].beats)
 
+  for i=1,2 do 
+    if debounce_fn["show_"..i]~=nil then 
+      screen.level(debounce_fn["show_"..i][1])
+      screen.move(i==1 and 32 or 96,32)
+      screen.text_center(debounce_fn["show_"..i][2]())
+    end
+  end
 
   screen.update()
+end
+
+function debounce_params()
+  for k,v in pairs(debounce_fn) do
+    if v~=nil and v[1]~=nil and v[1]>0 then
+      v[1]=v[1]-1
+      if v[1]~=nil and v[1]==0 then
+        if v[2]~=nil then
+          local status,err=pcall(v[2])
+          if err~=nil then
+            print(status,err)
+          end
+        end
+        debounce_fn[k]=nil
+      else
+        debounce_fn[k]=v
+      end
+    end
+  end
 end
 
 function params_loop()
