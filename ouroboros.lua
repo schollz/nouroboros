@@ -93,6 +93,7 @@ reverb_settings={
   rev_mid_time=6,
 }
 function init()
+  crow.output[4].action=string.format("adsr( %2.3f,1,7, %2.3f)",0.5,0.5)
   params:set("clock_tempo",bpm)
 
   print("starting")

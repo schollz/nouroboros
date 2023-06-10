@@ -169,7 +169,7 @@ Engine_Ouroboros : CroneEngine {
 		this.addCommand("record","ifis",{ arg msg;
             var id=msg[1];
             var seconds=msg[2].asFloat+(xfade*1.5);
-			var side=1-msg[3];
+			var side=msg[3];
 			var filename=msg[4].asString;
 
             // initiate a routine to automatically start playing loop

@@ -46,7 +46,7 @@ function Looper:init()
 
   local do_set_crow=function()
     if self.id==1 then
-      crow.output[2].action=string.format("ar{ %2.3f, %2.3f, 7, 'log'}",params:get(self.id.."attack")/1000,params:get(self.id.."release"))
+      crow.output[2].action=string.format("ar( %2.3f, %2.3f, 7)",params:get(self.id.."attack")/1000,params:get(self.id.."release"))
     else
       crow.output[4].action=string.format("adsr( %2.3f,1,7, %2.3f)",params:get(self.id.."attack")/1000,params:get(self.id.."release"))
     end
@@ -54,7 +54,7 @@ function Looper:init()
   local params_menu={
     {id="db",name="volume",min=1,max=8,exp=false,div=1,default=6,values={-96,-12,-9,-6,-3,0,3,6}},
   }
-  
+
   local params_menu2={
     {id="attack",name="attack",min=1,max=10000,exp=false,div=1,default=self.id==1 and 10 or 100,unit="ms",action=do_set_crow},
     {id="release",name="release",min=0.02,max=30,exp=false,div=0.02,default=self.id==1 and 0.5 or 0.5,unit="s",action=do_set_crow},
@@ -294,7 +294,7 @@ end
 
 function Looper:note_grid_on(r,c)
   local note=chords[clock_chord].m[r][c]
-  if self.id==1 then
+  if self.id==2 then
     note=chords1[clock_chord].m[r][c]
   end
   print(r,c,note)
