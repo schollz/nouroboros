@@ -221,7 +221,7 @@ function Looper:emit_note()
   end
   local x=self.notes_on[self.arp_beat%num_notes_on+1]
   local note=params:get(self.id.."hold_change")==1 and chords[clock_chord].m[x[1]][x[2]] or x[3]
-  if self.id==1 then
+  if self.id==2 then
     note=params:get(self.id.."hold_change")==1 and chords1[clock_chord].m[x[1]][x[2]] or x[3]
   end
   self.note_location_playing={x[1],x[2]}

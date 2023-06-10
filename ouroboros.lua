@@ -39,12 +39,31 @@ bpm=200
 --   -- {chord="IV","I",beats=3},
 -- }
 bpm=140
+-- chords={
+--   {chord="I",chord2="ii",beats=3},
+--   {chord="V6-9",chord2="vi",beats=3},
+--   {chord="vi",chord2="V",beats=6},
+--   {chord="ii",chord2="iii",beats=6},
+--   {chord="IV",chord2="V",beats=8},
+-- }
+bpm=100
 chords={
-  {chord="I",chord2="ii",beats=3},
-  {chord="V6-9",chord2="vi",beats=3},
-  {chord="vi",chord2="V",beats=6},
-  {chord="ii",chord2="iii",beats=6},
-  {chord="IV",chord2="V",beats=8},
+  {chord="IV",chord2="ii",beats=3},
+  {chord="I",chord2="vi",beats=3},
+  {chord="V",chord2="V",beats=3},
+  {chord="vi",chord2="V",beats=3},
+  {chord="IV",chord2="ii",beats=3},
+  {chord="I",chord2="vi",beats=3},
+  {chord="V",chord2="iii",beats=3},
+  {chord="V",chord2="IV",beats=3},
+  {chord="IV",chord2="ii",beats=3},
+  {chord="I",chord2="vi",beats=3},
+  {chord="iii",chord2="V",beats=3},
+  {chord="vi",chord2="V",beats=3},
+  {chord="IV",chord2="ii",beats=3},
+  {chord="I",chord2="vi",beats=3},
+  {chord="iii",chord2="IV",beats=3},
+  {chord="V",chord2="IV",beats=3},
 }
 
 -- sp
@@ -252,11 +271,33 @@ function init()
       chords[i].m[cc][j]=m_min[i][j]
     end
   end
-
-  for cc=1,6 do
+  for cc=1,3 do
     for i,c in ipairs(chords) do
       for j=1,3 do
         chords[i].m[cc][j]=chords[i].m[6][j]+12*(6-cc)
+      end
+    end
+  end
+  local cc=6
+  local m={}
+  for i,c in ipairs(chords) do
+    local mi={}
+    for j=1,3 do
+      table.insert(mi,c.m[cc][j])
+    end
+    table.rotatex(mi,math.random(0,2))
+    table.insert(m,mi)
+  end
+  local m_min=table.minimize_row_changes(m)
+  for i,c in ipairs(chords) do
+    for j=1,3 do
+      chords[i].m[cc][j]=m_min[i][j]
+    end
+  end
+  for cc=4,6 do
+    for i,c in ipairs(chords) do
+      for j=1,3 do
+        chords[i].m[cc][j]=chords[i].m[6][j]+12*(6-cc)+24
       end
     end
   end

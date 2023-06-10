@@ -81,10 +81,10 @@ Engine_Ouroboros : CroneEngine {
 			var snd0 = PlayBuf.ar(1,buf,rate:BufRateScale.ir(buf),loop:1,trigger:1-playhead);
 			var snd1 = PlayBuf.ar(1,buf,rate:BufRateScale.ir(buf),loop:1,trigger:playhead);
 			var snd = SelectX.ar(Lag.kr(playhead,xfade),[snd0,snd1]);
-            var reverbSend = 0.25;
+            var reverbSend = 0.0;
 			snd = snd * amp * EnvGen.ar(Env.adsr(3,1,1,3),1-done,doneAction:2);
-			snd = snd * (LFNoise2.kr(1/Rand(4,6)).range(9.neg,0).dbamp); // amplitude lfo
-			snd = Pan2.ar(snd,LFNoise2.kr(1/Rand(3,8),mul:0.75)); 
+			snd = snd * (LFNoise2.kr(1/Rand(8,12)).range(12.neg,0).dbamp); // amplitude lfo
+			snd = Pan2.ar(snd,LFNoise2.kr(1/Rand(6,20),mul:0.9)); 
 			Out.ar(busCompress,0*snd);
 			Out.ar(busNoCompress,(1-reverbSend)*snd);
 			Out.ar(busReverb,reverbSend*snd);
