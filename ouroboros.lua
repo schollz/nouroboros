@@ -65,6 +65,18 @@ chords={
   {chord="iii",chord2="IV",beats=3},
   {chord="V",chord2="IV",beats=3},
 }
+chords={
+  {chord="IV",chord2="ii",beats=2},
+  {chord="vi",chord2="vi",beats=5},
+  {chord="vi7",chord2="V",beats=2},
+  {chord="iii7",chord2="V",beats=2},
+  {chord="IV",chord2="ii",beats=4},
+  {chord="IV",chord2="ii",beats=2},
+  {chord="vi",chord2="vi",beats=4},
+  {chord="vi7",chord2="iii",beats=2},
+  {chord="iii7",chord2="iii",beats=2},
+  {chord="IV",chord2="IV",beats=4},
+}
 
 -- sp
 -- params:set("chord11",6,true)
@@ -110,6 +122,7 @@ reverb_settings={
   rev_return_level=0,
   rev_low_time=9,
   rev_mid_time=6,
+  monitor_level=-96,
 }
 function init()
   crow.output[4].action=string.format("adsr( %2.3f,1,7, %2.3f)",0.5,0.5)

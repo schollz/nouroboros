@@ -57,8 +57,8 @@ Engine_Ouroboros : CroneEngine {
 			var sndReverb=In.ar(busReverb,2);
 			var sndCompress=In.ar(busCompress,2);
 			var sndNoCompress=In.ar(busNoCompress,2);
-			var snd1 = (SoundIn.ar(0)*VarLag.kr(db2,5,warp:\sine).dbamp);
-			var snd2 = (SoundIn.ar(1)*VarLag.kr(db1,5,warp:\sine).dbamp);
+			var snd1 = (SoundIn.ar(0)*VarLag.kr(db1,5,warp:\sine).dbamp);
+			var snd2 = (SoundIn.ar(1)*VarLag.kr(db2,5,warp:\sine).dbamp);
 			var in = snd1+snd2;
 			SendReply.kr(Impulse.kr(10),"/loop_db",[
 				Clip.kr(LinLin.kr(Lag.kr(Amplitude.kr(snd1),0.5).ampdb,96.neg,16,0,15),0,15).round,
@@ -76,7 +76,7 @@ Engine_Ouroboros : CroneEngine {
 
 		SynthDef("looper",{
 			arg id,buf,t_trig=0,busReverb,busCompress,busNoCompress,db=0,done=0;
-            var amp = VarLag.kr(db,5,warp:\sine).dbamp;
+            var amp = VarLag.kr(db,30,warp:\sine).dbamp;
             var playhead = ToggleFF.kr(t_trig);
 			var snd0 = PlayBuf.ar(1,buf,rate:BufRateScale.ir(buf),loop:1,trigger:1-playhead);
 			var snd1 = PlayBuf.ar(1,buf,rate:BufRateScale.ir(buf),loop:1,trigger:playhead);
