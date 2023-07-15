@@ -67,7 +67,7 @@ chords={
 }
 chords={
   {chord="IV",chord2="ii",beats=2},
-  {chord="vi",chord2="vi",beats=5},
+  {chord="vi",chord2="vi",beats=6},
   {chord="vi7",chord2="V",beats=2},
   {chord="iii7",chord2="V",beats=2},
   {chord="IV",chord2="ii",beats=4},

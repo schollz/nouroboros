@@ -256,7 +256,7 @@ function Looper:note_on(note)
   for k,v in pairs(self.notes_turned_on) do
     self:note_off(k)
   end
-  crow.output[self.id==1 and 1 or 3].volts=(note-24-9)/12
+  crow.output[self.id==1 and 1 or 3].volts=(note-24-12)/12
   if self.id==1 then
     crow.output[2]()
   else
